@@ -1,0 +1,41 @@
+# Firebase App Hosting — how the live ZET runs. Read docs/DEPLOY.md first.
+#
+# Every secret below must EXIST before the first rollout (step 4 of
+# DEPLOY.md). App Hosting has an open bug where a secret added to an
+# existing backend is silently left off the running app on every rollout
+# (firebase-tools #10391, April 2026). /status shows what the live app
+# actually received.
+
+runConfig:
+  # Scale to zero between uses: this is what keeps it inside the free
+  # allowance. The cost is a few seconds on the first request after idle.
+  minInstances: 0
+  # A hard ceiling on what a traffic spike — or a bug in a loop — can spend.
+  maxInstances: 2
+  concurrency: 40
+  cpu: 1
+  memoryMiB: 512
+
+env:
+  - variable: ADMIN_USERNAME
+    value: admin
+  - variable: R2_BUCKET
+    value: zet-receipts
+
+  # ── Secrets (Cloud Secret Manager; created with the Firebase CLI) ──────
+  - variable: DATABASE_URL
+    secret: zet-database-url
+  - variable: ADMIN_USER_ID
+    secret: zet-admin-user-id
+  - variable: ADMIN_PASSWORD_HASH
+    secret: zet-admin-password-hash
+  - variable: SESSION_SECRET
+    secret: zet-session-secret
+  - variable: R2_ACCOUNT_ID
+    secret: zet-r2-account-id
+  - variable: R2_ACCESS_KEY_ID
+    secret: zet-r2-access-key-id
+  - variable: R2_SECRET_ACCESS_KEY
+    secret: zet-r2-secret-access-key
+  - variable: ANTHROPIC_API_KEY
+    secret: zet-anthropic-api-key

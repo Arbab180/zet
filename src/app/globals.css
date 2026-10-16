@@ -1,0 +1,61 @@
+/**
+ * Global reset and design tokens. Nothing layout-critical lives here —
+ * that's CLAUDE.md's rule: inline styles (and anything that behaves like
+ * one) outrank media queries, which once silently broke the whole phone
+ * layout. Per-component layout lives in that component's CSS module.
+ */
+
+:root {
+  --zet-paper: #ffffff;
+  --zet-ink: #000000;
+  /* Ballpoint blue — what a manager's own handwriting looks like on the
+     paper sheet. SPEC.md §7: entries are shown in this colour throughout. */
+  --zet-blue: #1d3e9c;
+  --zet-rule: #c9c9c9;
+  --zet-rule-strong: #8a8a8a;
+  --zet-muted: #5a5a5a;
+  --zet-error: #b3261e;
+  --zet-error-bg: #fdecea;
+  --zet-focus: #1d3e9c;
+}
+
+/* This sheet mimics a specific printed paper form — black print on white —
+   regardless of the phone's system theme. A manager reading it at 1am
+   needs the same page they'd recognise on paper, not an inverted one. */
+:root {
+  color-scheme: light only;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  padding: 0;
+  margin: 0;
+}
+
+body {
+  background: var(--zet-paper);
+  color: var(--zet-ink);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Controls take their text colour from the browser's theme, not from the
+   page. A phone in dark mode (one that ignores `light only` above, or
+   forces its own dark theme) makes that white — on our white paper the
+   label or typed entry disappears. Start every control in ink. */
+input, button, select, textarea {
+  font-family: inherit;
+  color: var(--zet-ink);
+}
+
+/* A hint is for the screen. On a printed sheet an empty box must look
+   empty — "Όνομα" in the manager box would read as a name. */
+@media print {
+  ::placeholder {
+    color: transparent;
+  }
+}

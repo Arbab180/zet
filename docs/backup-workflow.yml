@@ -1,0 +1,76 @@
+# Nightly copy of the whole database into a private Cloudflare R2 bucket.
+#
+# Why this exists: Neon's free plan can only roll back 6 hours. A mistake
+# noticed the next morning — a night overwritten, a bad migration — would
+# be past it. This keeps a full copy of every night, independent of Neon.
+#
+# Runs at 02:30 UTC (05:30 Cyprus summer time), after the night's sheets.
+# "Run workflow" on the Actions tab runs it on demand — do that once after
+# setting it up and check the file appears in R2.
+#
+# Secrets (GitHub → repo → Settings → Secrets and variables → Actions):
+#   BACKUP_DATABASE_URL        the Neon OWNER connection string (neondb_owner).
+#                              Not the app's: zet_app is limited by row-level
+#                              security and would back up nothing.
+#   R2_ACCOUNT_ID              the Cloudflare account id
+#   R2_BACKUP_ACCESS_KEY_ID    a token for the BACKUP bucket only — not the
+#   R2_BACKUP_SECRET_ACCESS_KEY  app's token, so a leak of one cannot touch the other
+#   R2_BACKUP_BUCKET           e.g. zet-backups
+#
+# Old copies are removed by a lifecycle rule on the bucket (DEPLOY.md), not
+# here: this job never needs permission to delete anything.
+
+name: Nightly database backup
+
+on:
+  schedule:
+    - cron: '30 2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      # pg_dump must be at least as new as the server. 18 dumps any Neon
+      # version up to 18.
+      - name: Install pg_dump 18
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y -qq postgresql-client-18
+
+      - name: Dump
+        env:
+          DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+        run: |
+          set -euo pipefail
+          BIN=/usr/lib/postgresql/18/bin
+          FILE="zet-$(date -u +%Y-%m-%dT%H%MZ).dump"
+          "$BIN/pg_dump" "$DATABASE_URL" --format=custom --no-owner --no-privileges --file "$FILE"
+          # A dump that lacks the nightly reports is not a backup. Fail loudly
+          # rather than upload a file that only looks like one.
+          "$BIN/pg_restore" --list "$FILE" | grep -q "TABLE DATA public zet_report " \
+            || { echo "::error::dump has no zet_report data"; exit 1; }
+          echo "FILE=$FILE" >> "$GITHUB_ENV"
+          ls -l "$FILE"
+
+      - name: Upload to R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_BACKUP_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_BACKUP_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          # Newer AWS CLIs add checksum headers R2 can reject; only send them
+          # when the operation requires it.
+          AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+          AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+          BUCKET: ${{ secrets.R2_BACKUP_BUCKET }}
+          ENDPOINT: https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
+        run: |
+          set -euo pipefail
+          aws s3 cp "$FILE" "s3://$BUCKET/daily/$FILE" --endpoint-url "$ENDPOINT" --only-show-errors
+          aws s3 ls "s3://$BUCKET/daily/$FILE" --endpoint-url "$ENDPOINT"

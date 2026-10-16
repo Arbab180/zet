@@ -1,0 +1,67 @@
+.wrap { display: grid; gap: 0.35rem; }
+
+.headRow, .footRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.label { font-size: 0.8rem; font-weight: 600; }
+
+.switchMode, .clear {
+  min-height: 40px;
+  padding: 0 0.6rem;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 0.75rem;
+  color: var(--zet-muted);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.switchMode:hover, .clear:hover { color: var(--zet-ink); }
+.switchMode:focus-visible, .clear:focus-visible {
+  outline: 2px solid var(--zet-focus);
+  outline-offset: 1px;
+}
+
+.canvas {
+  width: 100%;
+  height: 120px;
+  border: 1px solid var(--zet-rule-strong);
+  border-radius: 4px;
+  background: #fff;
+  /* Without this, dragging a finger scrolls the page instead of drawing. */
+  touch-action: none;
+  cursor: crosshair;
+}
+.canvas:focus-visible { outline: 2px solid var(--zet-focus); outline-offset: 1px; }
+
+.savedWrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  border: 1px solid var(--zet-rule-strong);
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  background: #fff;
+}
+.saved { height: 90px; max-width: 100%; object-fit: contain; }
+
+.typed {
+  font: inherit;
+  color: var(--zet-blue);
+  border: 1px solid var(--zet-rule-strong);
+  border-radius: 4px;
+  min-height: 44px;
+  padding: 0 0.6rem;
+}
+.typed:focus-visible { outline: 2px solid var(--zet-focus); outline-offset: 1px; }
+
+.hint { font-size: 0.72rem; color: var(--zet-muted); }
+
+@media (max-width: 700px), (pointer: coarse) {
+  .canvas { height: 150px; }
+}

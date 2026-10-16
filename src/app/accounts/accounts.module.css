@@ -1,0 +1,82 @@
+/* The accounts page. Layout lives here, never inline: an inline style
+   outranks every media query. */
+
+.page {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 1rem 1rem 4rem;
+}
+
+.heading {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  margin: 0.75rem 0 0.15rem;
+}
+.sub { color: var(--zet-muted); font-size: 0.85rem; margin: 0 0 1.5rem; }
+.note { font-size: 0.85rem; margin-top: 1.5rem; }
+.note a { color: var(--zet-ink); }
+
+.list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.8rem; }
+
+.card {
+  display: grid;
+  gap: 0.3rem;
+  border: 1px solid var(--zet-rule-strong);
+  border-radius: 6px;
+  padding: 0.9rem 1rem;
+  min-width: 0;
+}
+.cardName { font-size: 1rem; font-weight: 600; margin: 0; }
+.cardMeta { font-size: 0.85rem; color: var(--zet-muted); margin: 0; overflow-wrap: anywhere; }
+.username { color: var(--zet-ink); }
+.login { display: grid; gap: 0.3rem; }
+
+.form { display: grid; gap: 0.3rem; margin-top: 0.4rem; }
+.form label { font-size: 0.8rem; font-weight: 600; margin-top: 0.5rem; }
+.form input {
+  font: inherit;
+  color: var(--zet-blue);
+  background: transparent;
+  border: 1px solid var(--zet-rule-strong);
+  border-radius: 4px;
+  min-height: 40px;
+  padding: 0 0.6rem;
+  min-width: 0;
+}
+.form input:focus-visible { outline: 2px solid var(--zet-focus); outline-offset: 1px; }
+.form button {
+  margin-top: 0.9rem;
+  min-height: 40px;
+  border: 1px solid var(--zet-ink);
+  border-radius: 4px;
+  background: var(--zet-ink);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.form button:disabled { opacity: 0.6; cursor: default; }
+
+.reset summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  text-decoration: underline;
+}
+.reset summary:focus-visible { outline: 2px solid var(--zet-focus); outline-offset: 2px; }
+
+.error, .done {
+  margin: 0.75rem 0 0;
+  padding: 0.6rem;
+  font-size: 0.85rem;
+  border: 1px solid var(--zet-error);
+  background: var(--zet-error-bg);
+}
+.done { border-color: var(--zet-rule-strong); background: transparent; }
+
+@media (max-width: 700px), (pointer: coarse) {
+  .form input, .form button, .reset summary { min-height: 44px; }
+}

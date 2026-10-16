@@ -1,0 +1,893 @@
+/**
+ * CHINA SPICE shifts sheet.
+ *
+ * Nothing layout-critical is ever set inline in the component: an inline
+ * style outranks every media query, and doing that once silently broke the
+ * prototype's entire phone layout. Column counts live here, in custom
+ * properties, so a media query can actually change them.
+ *
+ * Widths. The ledger sheet is one column and caps at 790px — roughly a
+ * sheet of A4. This sheet is three columns of money inputs, so it needs
+ * more room before they can sit side by side, and it stays stacked until
+ * there is genuinely space.
+ */
+
+.page {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.sheet {
+  padding-bottom: 6rem; /* clears the sticky save bar */
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 0.25rem;
+  color: var(--zet-ink);
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+.backLink:hover,
+.backLink:focus-visible {
+  text-decoration: underline;
+}
+.backLink:focus-visible {
+  outline: 2px solid var(--zet-focus);
+  outline-offset: 2px;
+}
+
+/* ── Letterhead ─────────────────────────────────────────────────────── */
+
+.letterhead {
+  text-align: center;
+  border-bottom: 2px solid var(--zet-ink);
+  padding-bottom: 0.75rem;
+  margin-bottom: 1rem;
+}
+.legalName {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+.tagline {
+  font-size: 0.8rem;
+  letter-spacing: 0.18em;
+  margin: 0.15rem 0 0;
+}
+.contact {
+  font-size: 0.75rem;
+  color: var(--zet-muted);
+  margin: 0.4rem 0 0;
+}
+
+.topFields {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+.topFields label {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* ── The three shift columns ────────────────────────────────────────── */
+
+.columns {
+  --shift-columns: 1;
+  display: grid;
+  grid-template-columns: repeat(var(--shift-columns), minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+.column {
+  border: 1px solid var(--zet-rule-strong);
+  padding: 0.75rem;
+  min-width: 0; /* lets a column shrink instead of forcing overflow */
+}
+
+.columnHeading {
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-align: center;
+  margin: 0 0 0.75rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--zet-rule-strong);
+}
+
+.block {
+  margin-bottom: 1.25rem;
+}
+.blockHeading {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  margin: 0 0 0.4rem;
+}
+
+.fieldRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-height: 34px;
+  border-bottom: 1px solid var(--zet-rule);
+}
+.fieldRow label {
+  font-size: 0.8rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Scoped to .sheet, not a bare `input`. A CSS Module rejects a selector
+   with no local class ("not pure"), and rightly: an unscoped `input` rule
+   here would restyle every input in the app, not just this sheet's. */
+.sheet input {
+  font: inherit;
+  color: var(--zet-blue);
+  background: transparent;
+  border: none;
+  min-height: 34px;
+  padding: 0.2rem 0.25rem;
+}
+.sheet input:focus-visible {
+  outline: 2px solid var(--zet-focus);
+  outline-offset: -2px;
+}
+
+.amount {
+  width: 6.5rem;
+  flex: 0 0 auto;
+  /* Right-aligned so decimal points line up down the column, with room
+     to the right so the figure is not flush against the edge. */
+  text-align: right;
+  padding-right: 0.6rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The printed vertical bracket joining J C C and G A P under VISA.
+   This lives on .rowLabel, never on .gridRow: the row is
+   `display: contents`, so it has no box at all — position:relative is
+   inert on it and an absolutely positioned pseudo-element escapes all
+   the way to the page, which is how "VISA VIS" ended up stranded on the
+   ΤΑΜΕΙΟ row with a rule running down to B3. */
+/* One Visa row on its own: the mark, no joining rule. The sheet used to
+   bracket J C C and G A P together because both were Visa terminals;
+   JCC is retired and SIX CARDS is the only one left, and a bracket
+   joining a row to nothing is just a stray line. */
+.rowLabel.visaOnly {
+  position: relative;
+  padding-left: 1.15rem;
+}
+.rowLabel.visaOnly::before {
+  content: 'VISA';
+  position: absolute;
+  left: 0.05rem;
+  top: 50%;
+  transform: translateY(-50%);
+  writing-mode: vertical-rl;
+  font-size: 0.48rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  color: var(--zet-ink);
+}
+
+.rowLabel.visaStart,
+.rowLabel.visaEnd {
+  position: relative;
+  padding-left: 1.15rem;
+}
+.rowLabel.visaStart::before,
+.rowLabel.visaEnd::before {
+  content: 'VISA';
+  position: absolute;
+  left: 0.05rem;
+  top: 50%;
+  transform: translateY(-50%);
+  writing-mode: vertical-rl;
+  font-size: 0.48rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  color: var(--zet-ink);
+}
+/* The joining rule: down from the middle of J C C, up from the middle
+   of G A P, so the two halves meet on the border between them. */
+.rowLabel.visaStart::after,
+.rowLabel.visaEnd::after {
+  content: '';
+  position: absolute;
+  left: 0.78rem;
+  border-left: 1px solid var(--zet-ink);
+}
+.rowLabel.visaStart::after {
+  top: 50%;
+  bottom: 0;
+}
+.rowLabel.visaEnd::after {
+  top: 0;
+  bottom: 50%;
+}
+
+/* ── Invoices ───────────────────────────────────────────────────────── */
+
+/* Each caption travels with its own box. A single header row above the
+   line looks right until the line wraps on a phone, at which point the
+   captions stay put and the boxes move, and they end up naming the wrong
+   fields — which is worse than no captions at all. */
+.invoiceField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+.invoiceFieldLabel {
+  font-size: 0.65rem;
+  color: var(--zet-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.invoiceLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid var(--zet-rule);
+}
+/* Every box on this line is drawn.
+   These are scoped through .invoiceLine for a reason, not for tidiness.
+   `.sheet input` above sets border-style:none to make the payment rows
+   read like ruled paper, and it has one more element in its selector than
+   a bare .invoiceAmount does — so it won. The amount box was therefore
+   invisible: nothing to see, nothing to aim at, and the field was
+   reported as taking no input at all. An input nobody can see is the same
+   as an input that does not work. */
+.invoiceLine .invoiceSupplier,
+.invoiceLine .invoiceNumber,
+.invoiceLine .invoiceAmount {
+  border: 1px solid var(--zet-rule-strong);
+  border-radius: 4px;
+  background: transparent;
+  padding: 0.25rem 0.4rem;
+  min-height: 36px;
+  font-size: 0.8rem;
+}
+.invoiceField:nth-of-type(1) {
+  flex: 2 1 7rem;
+}
+.invoiceField:nth-of-type(2) {
+  flex: 1.4 1 6rem;
+}
+.invoiceFieldAmount {
+  flex: 0 0 6rem;
+}
+.invoiceLine .invoiceSupplier {
+  width: 100%;
+  min-width: 0;
+}
+.invoiceLine .invoiceNumber {
+  width: 100%;
+  min-width: 0;
+}
+/* Right-aligned with the decimal points in a column, as the paper has
+   them, and a fixed width so the three lines of a block line up. */
+.invoiceLine .invoiceAmount {
+  width: 100%;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.invoiceLine:focus-within .invoiceSupplier,
+.invoiceSupplier:focus,
+.invoiceNumber:focus,
+.invoiceAmount:focus {
+  outline: 2px solid var(--zet-focus);
+  outline-offset: 1px;
+}
+
+/* The brace the paper draws down the right of the block, with the one
+   figure beside it. */
+.invoiceSubtotal {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.4rem 0 0.1rem;
+  margin-top: 0.2rem;
+  border-top: 1px solid var(--zet-ink);
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The photo button sits at a fixed width so it does not squeeze the three
+   fields that carry the figures. */
+.photoButton {
+  flex: 0 0 auto;
+}
+
+.photoButton {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 0.6rem;
+  border: 1px solid var(--zet-rule-strong);
+  border-radius: 4px;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+.photoButton:focus-within {
+  outline: 2px solid var(--zet-focus);
+  outline-offset: 1px;
+}
+
+/* A real, in-layout file input — never a display:none one driven by
+   .click(), which failed silently in the prototype. Visually collapsed but
+   still focusable and still the label's control. */
+.fileInput {
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  position: absolute;
+  overflow: hidden;
+}
+
+/* The receipt's paperwork, under the line rather than along it — the same
+   block the ledger expense rows use, so the two sheets read alike. */
+.receiptDetails {
+  flex: 1 1 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  padding: 0.25rem 0 0.1rem;
+}
+.receiptField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  flex: 1 1 8rem;
+  min-width: 0;
+}
+.receiptFieldLabel {
+  font-size: 0.65rem;
+  color: var(--zet-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+/* The item breakdown takes the full width of the invoice line, below its
+   fields. The line is a wrapping flex row, so 100% puts it on its own row. */
+.receiptItemsCell {
+  flex: 1 1 100%;
+  min-width: 0;
+}
+.receiptDetails input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--zet-rule);
+  border-radius: 4px;
+  background: transparent;
+  padding: 0.25rem 0.35rem;
+  font-size: 0.78rem;
+  min-height: 34px;
+}
+
+/* Not an error: the scanner declined to name an amount, which is what it
+   should do when unsure. Quieter than the check below — nothing is wrong,
+   there is simply a number to type. */
+.invoiceUnread {
+  flex: 1 1 100%;
+  margin: 0.3rem 0 0;
+  padding: 0.3rem 0.5rem;
+  border-left: 3px solid var(--zet-rule-strong);
+  background: var(--zet-rule);
+  font-size: 0.75rem;
+}
+
+/* The one scanned value that reaches a cash reconciliation, when the model
+   was not sure of it. Loud on purpose: what this guards against is a
+   plausible wrong number that nobody looks at twice. */
+.invoiceCheck {
+  flex: 1 1 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.3rem 0 0;
+  padding: 0.4rem 0.5rem;
+  /* Blue, not red. Every machine-read amount lands here, including the
+     correct ones, so this is a step in the work rather than a fault —
+     and a red box that cries wolf on a right answer is one people learn
+     to dismiss without reading. Red is kept for the genuinely unsure
+     case below, which is rare enough to still mean something. */
+  border: 1px solid var(--zet-blue);
+  background: var(--zet-rule);
+  border-radius: 4px;
+  font-size: 0.75rem;
+}
+.invoiceCheckWarning {
+  color: var(--zet-blue);
+  font-weight: 600;
+}
+/* Only when the model itself said it was unsure. */
+.invoiceCheckWarning[data-unsure] {
+  color: var(--zet-error);
+}
+.invoiceCheckHint {
+  font-variant-numeric: tabular-nums;
+  color: var(--zet-ink);
+}
+.invoiceCheckLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 40px;
+  cursor: pointer;
+}
+.invoiceCheckLabel input {
+  width: 20px;
+  height: 20px;
+}
+
+.photoName {
+  flex: 1 1 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  font-size: 0.72rem;
+  color: var(--zet-muted);
+  margin: 0.2rem 0 0;
+}
+/* Same row, but a failure earns the vertical space a wrap costs — it says
+   what to do next, which no thumbnail can. */
+.photoFailedLine {
+  composes: photoName;
+  color: var(--zet-error);
+}
+/* Small enough to sit in the row's existing height, large enough to tell
+   one receipt from another at a glance. */
+.photoThumb {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  object-fit: cover;
+  border: 1px solid var(--zet-rule-strong);
+  border-radius: 4px;
+  background: var(--zet-rule);
+}
+/* One clipped line. The file name lives in the title attribute. */
+.photoNote {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.photoFailedLine .photoNote {
+  white-space: normal;
+}
+/* Marks a figure that came from the photo rather than a person, so it
+   reads as provisional and gets checked. */
+.photoScanned {
+  font-style: italic;
+}
+.photoRemove {
+  margin-left: 0.5rem;
+  min-height: 40px;
+  background: none;
+  border: none;
+  color: var(--zet-ink);
+  text-decoration: underline;
+  font: inherit;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+/* ── Totals ─────────────────────────────────────────────────────────── */
+
+.columnTotals,
+.dayTotals {
+  margin: 0;
+  border-top: 2px solid var(--zet-ink);
+  padding-top: 0.5rem;
+}
+.dayTotals {
+  margin-top: 1.5rem;
+}
+.columnTotals > div,
+.dayTotals > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.25rem 0;
+}
+.columnTotals dt,
+.dayTotals dt {
+  font-size: 0.78rem;
+}
+.columnTotals dd,
+.dayTotals dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+.differenceRow dd {
+  color: var(--zet-error);
+}
+
+.hint {
+  font-size: 0.72rem;
+  color: var(--zet-muted);
+  margin: 0.3rem 0 0;
+}
+
+/* ── Footer, alerts, save bar ───────────────────────────────────────── */
+
+.footerFields {
+  margin-top: 1.5rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.alert {
+  margin-top: 1rem;
+  border: 1px solid var(--zet-error);
+  background: var(--zet-error-bg);
+  padding: 0.75rem;
+  font-size: 0.85rem;
+}
+.alert p {
+  margin: 0 0 0.25rem;
+}
+.alert ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.draftChoice {
+  border: 1px solid var(--zet-rule-strong);
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+}
+.draftChoice p {
+  margin: 0 0 0.5rem;
+}
+/* What a draft cannot bring back. Stated on the banner rather than
+   discovered on saving a sheet that looked finished. */
+.draftChoiceWarning {
+  margin: 0.3rem 0 0;
+  font-size: 0.75rem;
+  color: var(--zet-error);
+}
+.draftChoiceButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.draftChoiceButtons button {
+  min-height: 40px;
+  padding: 0 0.9rem;
+  border: 1px solid var(--zet-rule-strong);
+  border-radius: 4px;
+  background: var(--zet-paper);
+  /* Never leave a button's text to the browser default: on a phone in
+     dark mode that default is white, and the label vanishes into the
+     white background. */
+  color: var(--zet-ink);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.saveBar {
+  position: sticky;
+  bottom: 0;
+  background: var(--zet-paper);
+  border-top: 1px solid var(--zet-rule-strong);
+  padding: 0.6rem 0;
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: flex-end;
+}
+.saveBar button {
+  min-height: 44px;
+  padding: 0 1.4rem;
+  border: 1px solid var(--zet-ink);
+  border-radius: 4px;
+  background: var(--zet-ink);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.saveBar button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────── */
+
+/* Side by side only once three columns of money inputs genuinely fit. */
+@media (min-width: 820px) {
+  .page {
+    max-width: 1100px;
+  }
+  .columns {
+    --shift-columns: 3;
+    gap: 1rem;
+  }
+}
+
+/* A tablet is a wide screen with fat fingers, so width alone is the wrong
+   test — this keys on coarse pointers too. */
+@media (max-width: 700px), (pointer: coarse) {
+  .sheet input,
+  .fieldRow {
+    min-height: 40px;
+  }
+  .amount {
+    width: 7rem;
+  }
+}
+
+/* ── Correcting an approved night ─────────────────────────────────── */
+
+.correctionBanner {
+  border: 1px solid var(--zet-ink);
+  border-left: 4px solid var(--zet-ink);
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+}
+.correctionBanner p { margin: 0; }
+.correctionTitle { font-weight: 700; margin-bottom: 0.2rem !important; }
+
+.correctionReason { display: grid; gap: 0.3rem; margin-top: 1.5rem; }
+.correctionReason label { font-size: 0.8rem; font-weight: 600; }
+.correctionReason textarea {
+  font: inherit;
+  color: var(--zet-blue);
+  border: 1px solid var(--zet-rule-strong);
+  border-radius: 4px;
+  padding: 0.5rem;
+  min-height: 44px;
+  resize: vertical;
+}
+.correctionReason textarea:focus-visible {
+  outline: 2px solid var(--zet-focus);
+  outline-offset: 1px;
+}
+
+
+/* ── The sheet as one grid ──────────────────────────────────────────────
+   Methods down the left, shifts across, exactly as the paper is printed.
+   The column count comes from the form config rather than being hardcoded
+   at three, because ΤΟ ΑΝΑΜΜΑ and the two CHOPSTICKS sheets are ledgers
+   and a fourth shift is a config change, not a rewrite. */
+.grid {
+  display: grid;
+  /* The count comes from the component as a custom property, never as an
+     inline grid-template-columns: an inline value outranks every media
+     query, which is how this project once kept the desktop layout on
+     phones. The label width stays here so the query below can change it. */
+  grid-template-columns: var(--zet-grid-label, 5.5rem) repeat(var(--zet-grid-count, 3), 1fr);
+  border: 1px solid var(--zet-ink);
+  margin-bottom: 1rem;
+}
+.gridRow {
+  display: contents;
+}
+.rowLabel {
+  display: flex;
+  align-items: center;
+  padding: 0.3rem 0.4rem;
+  border-right: 1px solid var(--zet-ink);
+  border-bottom: 1px solid var(--zet-rule);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  min-height: 40px;
+}
+.colHeading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.3rem 0.2rem;
+  border-right: 1px solid var(--zet-rule);
+  border-bottom: 1px solid var(--zet-ink);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-align: center;
+}
+.cell {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.3rem;
+  border-right: 1px solid var(--zet-rule);
+  border-bottom: 1px solid var(--zet-rule);
+  min-width: 0;
+}
+.cellLabel {
+  font-size: 0.62rem;
+  color: var(--zet-muted);
+  white-space: nowrap;
+}
+/* The name box on a spare line. Scoped through .grid for the same reason
+   as .cellAmount below: `.sheet input` is (0,1,1) and would otherwise
+   strip this back to an invisible borderless box, which is exactly how
+   the invoice amount field disappeared. */
+.grid .rowLabelInput {
+  width: 100%;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  padding: 0.3rem 0.4rem;
+  min-height: 36px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--zet-ink);
+}
+.gridRow > .rowLabelInput {
+  border-right: 1px solid var(--zet-ink);
+  border-bottom: 1px solid var(--zet-rule);
+}
+.grid .rowLabelInput::placeholder {
+  font-weight: 400;
+  color: var(--zet-muted);
+}
+.grid .rowLabelInput:focus {
+  outline: 2px solid var(--zet-focus);
+  outline-offset: -2px;
+}
+
+/* Scoped through .grid to outrank `.sheet input`, which strips borders to
+   make the rows read like ruled paper — the same specificity trap that
+   made the invoice amount box invisible. */
+.grid .cellAmount {
+  width: 100%;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  padding: 0.2rem 0.3rem;
+  min-height: 36px;
+  font-size: 0.82rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--zet-blue);
+}
+.gridRow > .cellAmount {
+  border-right: 1px solid var(--zet-rule);
+  border-bottom: 1px solid var(--zet-rule);
+}
+.grid .cellAmount:focus {
+  outline: 2px solid var(--zet-focus);
+  outline-offset: -2px;
+}
+.cellTotal {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0.3rem 0.4rem;
+  border-right: 1px solid var(--zet-rule);
+  border-bottom: 1px solid var(--zet-rule);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.82rem;
+}
+.gridTotalRow .rowLabel,
+.gridTotalRow .cellTotal {
+  border-top: 2px solid var(--zet-ink);
+  font-weight: 700;
+}
+.gridComputedRow .rowLabel,
+.gridComputedRow .cellTotal {
+  font-size: 0.72rem;
+  color: var(--zet-muted);
+  min-height: 32px;
+}
+/* Card brackets (src/lib/cardMachines.ts): the total reads like the card
+   row it replaces; the brackets under it are indented, as a group's parts
+   are on the ledger sheets. */
+.gridMachineTotalRow .cellTotal {
+  font-weight: 700;
+}
+.gridMachineRow .rowLabel {
+  padding-left: 1.4rem;
+  color: var(--zet-muted);
+  font-weight: 500;
+}
+.gridMachineRow .rowLabel::before {
+  content: '└ ';
+  color: var(--zet-rule);
+}
+.gridMachineRow .rowLabel:has(.bracketAdd)::before {
+  content: none;
+}
+.gridMachineRow .rowLabel:has(.bracketAdd) {
+  padding-left: 0.4rem;
+}
+.bracketRemove {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: var(--zet-error);
+  font-size: 1rem;
+  line-height: 1;
+  min-width: 28px;
+  min-height: 28px;
+  padding: 0;
+  cursor: pointer;
+}
+.bracketAdd {
+  background: none;
+  border: 1px dashed var(--zet-rule-strong);
+  border-radius: 6px;
+  min-width: 32px;
+  padding: 0.15rem 0.5rem;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--zet-ink);
+  cursor: pointer;
+  white-space: nowrap;
+}
+@media (max-width: 700px), (pointer: coarse) {
+  .bracketRemove,
+  .bracketAdd {
+    min-height: 40px;
+    min-width: 40px;
+  }
+}
+.cellTotal[data-off] {
+  color: var(--zet-error);
+  font-weight: 700;
+}
+
+.invoiceSection {
+  border: 1px solid var(--zet-rule-strong);
+  border-radius: 4px;
+  padding: 0.5rem 0.6rem;
+  margin-bottom: 0.75rem;
+}
+
+@media (max-width: 520px) {
+  .grid {
+    --zet-grid-label: 4.2rem;
+    font-size: 0.75rem;
+  }
+  .rowLabel {
+    font-size: 0.62rem;
+    padding: 0.2rem 0.25rem;
+  }
+  /* Hiding these outright saved width and cost far more: the three
+     ΤΑΜΕΙΟ rows became three unlabelled boxes, and on a phone —
+     which is what the managers actually hold — there was nothing on
+     screen to say which one was Dine in. Stacking spends height, of
+     which a scrolling page has plenty, instead of width, of which it
+     has none. */
+  .cell {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+  }
+  .cellLabel {
+    font-size: 0.55rem;
+    line-height: 1.2;
+  }
+  .grid .cellAmount {
+    font-size: 0.72rem;
+    padding: 0.15rem 0.2rem;
+  }
+}

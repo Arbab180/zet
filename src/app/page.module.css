@@ -1,0 +1,95 @@
+.page {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 1rem 1rem 4rem;
+}
+@media (min-width: 820px) {
+  .page { max-width: 790px; }
+}
+
+.section { margin-bottom: 2rem; }
+.sectionHeading {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--zet-muted);
+  margin: 0 0 0.6rem;
+}
+
+.allClear {
+  margin: 0;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--zet-rule);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: var(--zet-muted);
+}
+
+/* ── Flagged nights ───────────────────────────────────────────────── */
+
+.flagList { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
+
+.flagRow {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.2rem 0.75rem;
+  border: 1px solid var(--zet-rule-strong);
+  border-left: 4px solid var(--zet-error);
+  border-radius: 6px;
+  padding: 0.7rem 1rem;
+  min-height: 44px;
+  color: var(--zet-ink);
+  text-decoration: none;
+}
+.flagRow:focus-visible { outline: 2px solid var(--zet-focus); outline-offset: 1px; }
+.flagDate { font-weight: 600; font-variant-numeric: tabular-nums; }
+.flagWhere { font-size: 0.82rem; color: var(--zet-muted); }
+.flagWhat {
+  grid-column: 1 / -1;
+  font-size: 0.75rem;
+  color: var(--zet-error);
+}
+
+.moreLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  margin-top: 0.5rem;
+  font-size: 0.82rem;
+  color: var(--zet-ink);
+}
+
+/* ── Restaurants ──────────────────────────────────────────────────── */
+
+.list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.6rem; }
+
+.link {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--zet-rule-strong);
+  border-radius: 6px;
+  padding: 0.9rem 1rem;
+  min-height: 44px;
+  color: var(--zet-ink);
+  text-decoration: none;
+}
+.link:focus-visible { outline: 2px solid var(--zet-focus); outline-offset: 1px; }
+
+/* ── Logout ───────────────────────────────────────────────────────── */
+
+.logout { display: flex; justify-content: flex-end; }
+.logout button {
+  min-height: 40px;
+  padding: 0 0.9rem;
+  border: 1px solid var(--zet-rule-strong);
+  border-radius: 4px;
+  background: var(--zet-paper);
+  /* Never leave a button's text to the browser default: on a phone in
+     dark mode that default is white, and the label vanishes into the
+     white background. */
+  color: var(--zet-ink);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}

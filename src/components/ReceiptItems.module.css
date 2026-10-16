@@ -1,0 +1,133 @@
+/* The item breakdown under a receipt line. Secondary weight throughout:
+   this is detail beside the figure the night reconciles on, not part of
+   the printed sheet.
+
+   Every input rule is scoped through TWO classes (.items .row input). Both
+   sheets carry a `.sheet input` / `.field input` rule that strips borders
+   to make rows read like ruled paper, and at (0,1,1) it outranks a single
+   class — which is how an invoice amount box once became invisible and was
+   reported as "the field takes no input". */
+
+.items {
+  border: 1px solid var(--zet-rule);
+  border-radius: 6px;
+  padding: 0.3rem 0.45rem 0.4rem;
+  font-size: 0.78rem;
+  background: var(--zet-paper);
+}
+
+.summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  cursor: pointer;
+  min-height: 32px;
+  align-items: center;
+  color: var(--zet-ink);
+  font-weight: 600;
+}
+.summaryTotal {
+  font-variant-numeric: tabular-nums;
+  margin-left: auto;
+}
+
+.fromScan {
+  margin: 0.2rem 0 0.35rem;
+  font-size: 0.72rem;
+  color: var(--zet-muted);
+}
+
+.head,
+.items .row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 4.5rem 4.75rem 2rem;
+  column-gap: 0.3rem;
+  align-items: center;
+}
+.head {
+  font-size: 0.62rem;
+  color: var(--zet-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  margin-top: 0.2rem;
+}
+.headAmount {
+  text-align: right;
+}
+.items .row {
+  margin-top: 0.2rem;
+}
+
+.items .row input {
+  border: 1px solid var(--zet-rule);
+  border-radius: 4px;
+  background: transparent;
+  padding: 0.25rem 0.35rem;
+  font-size: 0.78rem;
+  min-height: 34px;
+  min-width: 0;
+  width: 100%;
+  text-align: left;
+}
+.items .row input.amount {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.items .row input:focus {
+  outline: 2px solid var(--zet-focus);
+  outline-offset: 1px;
+}
+
+.items .row .remove {
+  min-height: 34px;
+  min-width: 2rem;
+  border: 0;
+  background: transparent;
+  color: var(--zet-muted);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.items .row .remove:hover {
+  color: var(--zet-error);
+}
+
+.foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+.footTotal {
+  font-variant-numeric: tabular-nums;
+  color: var(--zet-muted);
+}
+
+.add,
+.addFirst {
+  border: 1px dashed var(--zet-rule-strong);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--zet-ink);
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  min-height: 32px;
+  cursor: pointer;
+}
+
+/* Muted, not red: a difference here is something to look at, not a fault
+   in the sheet. Red is kept for things that stop a save. */
+.difference {
+  margin: 0.35rem 0 0;
+  font-size: 0.72rem;
+  color: var(--zet-muted);
+}
+
+@media print {
+  .add,
+  .addFirst,
+  .items .row .remove {
+    display: none;
+  }
+}

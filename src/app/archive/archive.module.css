@@ -1,0 +1,246 @@
+/* Shared by all three archive screens. Layout lives here, never inline:
+   an inline style outranks every media query. */
+
+.page {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 1rem 1rem 4rem;
+}
+@media (min-width: 820px) {
+  .page { max-width: 790px; }
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  color: var(--zet-ink);
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+.backLink:hover, .backLink:focus-visible { text-decoration: underline; }
+.backLink:focus-visible { outline: 2px solid var(--zet-focus); outline-offset: 2px; }
+
+.heading {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  margin: 0.75rem 0 0.15rem;
+}
+.sub { color: var(--zet-muted); font-size: 0.85rem; margin: 0 0 1.5rem; }
+.empty { color: var(--zet-muted); font-size: 0.9rem; }
+.note { color: var(--zet-muted); font-size: 0.85rem; margin-top: 1.5rem; }
+
+.list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.6rem; }
+
+/* ── Restaurant cards ─────────────────────────────────────────────── */
+
+.card {
+  display: grid;
+  gap: 0.2rem;
+  border: 1px solid var(--zet-rule-strong);
+  border-radius: 6px;
+  padding: 0.9rem 1rem;
+  min-height: 40px;
+  color: var(--zet-ink);
+  text-decoration: none;
+}
+.card:focus-visible { outline: 2px solid var(--zet-focus); outline-offset: 1px; }
+.cardName { font-weight: 600; }
+.cardMeta { font-size: 0.78rem; color: var(--zet-muted); }
+.badge {
+  justify-self: start;
+  margin-top: 0.35rem;
+  border: 1px solid var(--zet-error);
+  color: var(--zet-error);
+  background: var(--zet-error-bg);
+  border-radius: 999px;
+  padding: 0.1rem 0.6rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+/* ── Filters ──────────────────────────────────────────────────────── */
+
+.filters { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+.filter, .filterActive {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 0.9rem;
+  border: 1px solid var(--zet-rule-strong);
+  border-radius: 999px;
+  font-size: 0.82rem;
+  text-decoration: none;
+  color: var(--zet-ink);
+}
+.filterActive { background: var(--zet-ink); color: #fff; border-color: var(--zet-ink); }
+.filter:focus-visible, .filterActive:focus-visible {
+  outline: 2px solid var(--zet-focus); outline-offset: 1px;
+}
+
+/* ── Night rows ───────────────────────────────────────────────────── */
+
+.row, .rowFlagged {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.5rem 0.75rem;
+  align-items: baseline;
+  border: 1px solid var(--zet-rule-strong);
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  min-height: 40px;
+  color: var(--zet-ink);
+  text-decoration: none;
+}
+.rowFlagged { border-left: 4px solid var(--zet-error); }
+.row:focus-visible, .rowFlagged:focus-visible {
+  outline: 2px solid var(--zet-focus); outline-offset: 1px;
+}
+.rowDate { font-weight: 600; font-variant-numeric: tabular-nums; }
+.rowStatus { font-size: 0.78rem; color: var(--zet-muted); }
+.rowAmount { font-variant-numeric: tabular-nums; font-weight: 600; }
+.rowFlags {
+  grid-column: 1 / -1;
+  font-size: 0.75rem;
+  color: var(--zet-error);
+}
+
+/* ── Detail ───────────────────────────────────────────────────────── */
+
+.flagPanel {
+  border: 1px solid var(--zet-error);
+  background: var(--zet-error-bg);
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.25rem;
+  font-size: 0.85rem;
+}
+.flagPanelTitle { margin: 0 0 0.35rem; font-weight: 700; }
+.flagPanel ul { margin: 0; padding-left: 1.1rem; }
+
+.totals { margin: 0 0 1.5rem; border-top: 2px solid var(--zet-ink); padding-top: 0.5rem; }
+.totals > div { display: flex; justify-content: space-between; gap: 1rem; padding: 0.25rem 0; }
+.totals dt { font-size: 0.85rem; }
+.totals dd { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; }
+.varianceRow dd { color: var(--zet-error); }
+
+.section { margin-bottom: 1.5rem; }
+.sectionHeading {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  margin: 0 0 0.4rem;
+}
+.lineList { list-style: none; margin: 0; padding: 0; }
+.lineList li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid var(--zet-rule);
+  font-size: 0.85rem;
+}
+.lineAmount { font-variant-numeric: tabular-nums; }
+.lineNote { flex: 1 1 100%; font-size: 0.72rem; color: var(--zet-error); }
+.who { margin: 0.2rem 0; font-size: 0.85rem; }
+
+.approveForm { margin-top: 1.5rem; }
+.approveForm button {
+  min-height: 44px;
+  padding: 0 1.4rem;
+  border: 1px solid var(--zet-ink);
+  border-radius: 4px;
+  background: var(--zet-ink);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.approveForm button:disabled { opacity: 0.6; cursor: default; }
+.error {
+  margin: 0 0 0.6rem;
+  border: 1px solid var(--zet-error);
+  background: var(--zet-error-bg);
+  padding: 0.6rem;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 700px), (pointer: coarse) {
+  .card, .row, .rowFlagged { min-height: 48px; }
+}
+
+/* ── Revision history ─────────────────────────────────────────────── */
+
+.revisionList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-left: 2px solid var(--zet-rule-strong);
+}
+.revisionList li {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.5rem 0 0.5rem 0.9rem;
+  position: relative;
+  font-size: 0.85rem;
+}
+.revisionList li::before {
+  content: '';
+  position: absolute;
+  left: -5px;
+  top: 0.85rem;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--zet-rule-strong);
+}
+.revisionWhen { font-variant-numeric: tabular-nums; font-weight: 600; }
+.revisionReason { color: var(--zet-ink); }
+.revisionBefore { font-size: 0.75rem; color: var(--zet-muted); }
+.revisionNote { font-size: 0.75rem; color: var(--zet-muted); margin: 0.6rem 0 0; }
+
+.correctLink { margin: 1.5rem 0 0; font-size: 0.85rem; }
+.correctLink a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  color: var(--zet-ink);
+}
+
+.exportLink {
+  display: inline-block;
+  margin: -0.75rem 0 1.5rem;
+  padding: 0.45rem 0.8rem;
+  border: 1px solid var(--zet-ink);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: var(--zet-ink);
+  text-decoration: none;
+}
+.exportLink:hover { background: var(--zet-ink); color: #fff; }
+
+/* A receipt's items, under its line. Smaller and indented: detail beside
+   the figure, not a figure of the night. Selectors go through .lineList
+   because `.lineList li` styles every li beneath it, these included. */
+.lineList .itemList {
+  flex: 1 1 100%;
+  list-style: none;
+  margin: 0.15rem 0 0.25rem;
+  padding: 0 0 0 0.9rem;
+  border-left: 2px solid var(--zet-rule);
+  font-size: 0.78rem;
+  color: var(--zet-muted);
+}
+.lineList .itemList li {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.1rem 0;
+  border: 0;
+  font-size: inherit;
+}
+.itemQty { white-space: nowrap; }
+.lineList .itemList .itemNote { font-style: italic; }

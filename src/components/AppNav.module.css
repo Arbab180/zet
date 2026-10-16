@@ -1,0 +1,39 @@
+.nav {
+  display: flex;
+  gap: 0.25rem;
+  border-bottom: 1px solid var(--zet-rule-strong);
+  margin-bottom: 1.5rem;
+}
+
+.tab, .tabActive {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 1rem;
+  font-size: 0.9rem;
+  text-decoration: none;
+  color: var(--zet-muted);
+  /* The active tab is marked by a rule that sits ON the container's border,
+     so switching tabs never shifts the content below by a pixel. */
+  border-bottom: 3px solid transparent;
+  margin-bottom: -1px;
+}
+
+.tabActive {
+  color: var(--zet-ink);
+  font-weight: 700;
+  border-bottom-color: var(--zet-ink);
+}
+
+.tab:hover { color: var(--zet-ink); }
+.tab:focus-visible, .tabActive:focus-visible {
+  outline: 2px solid var(--zet-focus);
+  outline-offset: -2px;
+}
+
+/* The admin has three tabs, and they must fit a 320px phone. Tighter
+   rather than scrolling: a clipped tab label is a tab nobody finds. */
+@media (max-width: 420px) {
+  .nav { gap: 0; }
+  .tab, .tabActive { padding: 0 0.5rem; font-size: 0.8rem; white-space: nowrap; }
+}

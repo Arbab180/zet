@@ -1,0 +1,18 @@
+node_modules
+.next
+dist
+.env*
+!.env.example
+.DS_Store
+tsconfig.tsbuildinfo
+
+# scratch prompt file, not part of the project
+NEXT_STEP.md
+
+# Test receipts — real suppliers and amounts, never committed
+receipts-test/*
+!receipts-test/README.md
+
+# Scratch from `npm test | tee` when handing output to Claude.
+test-output.txt
+export-samples/
