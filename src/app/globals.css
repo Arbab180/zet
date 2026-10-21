@@ -52,6 +52,19 @@ input, button, select, textarea {
   color: var(--zet-ink);
 }
 
+/* iOS Safari zooms the page in on focus of any control under 16px, and
+   leaves it zoomed — the manager then has to pinch back out after every
+   box. The sheets set 9–14px on their controls through module rules that
+   outrank a plain `input` selector, so this has to win by !important
+   rather than by a specificity race any new rule could lose. Not done
+   with maximum-scale / user-scalable=no: pinch-zoom stays (layout.tsx).
+   Same phone/tablet key as the touch targets — an iPad zooms too. */
+@media (max-width: 700px), (pointer: coarse) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
 /* A hint is for the screen. On a printed sheet an empty box must look
    empty — "Όνομα" in the manager box would read as a name. */
 @media print {
