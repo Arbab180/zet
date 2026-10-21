@@ -88,6 +88,11 @@ export const MSG_PHOTO_CONFIRM_CHECKED = 'Έλεγξα την απόδειξη';
 export const MSG_PHOTO_CHECK_FIRST =
   'Ελέγξτε τις αποδείξεις με χαμηλή βεβαιότητα και σημειώστε τες πριν αποθηκεύσετε.';
 export const MSG_SUPPLIER = 'Προμηθευτής';
+/* Shown inside an empty box to say where its figure comes from: the
+   till's Z report, or the cash counted into the envelope. Short, because
+   a shift column on a 320px phone is barely wider than the word. */
+export const MSG_HINT_Z_REPORT = 'Z report';
+export const MSG_HINT_ENVELOPE = 'Φάκελος';
 /** Shown when an unfinished sheet is offered back after a reload. */
 export const MSG_DRAFT_NO_PHOTOS =
   'Οι φωτογραφίες των αποδείξεων δεν κρατούνται. Θα χρειαστεί να τις ξαναβγάλετε και να υποβάλετε ξανά το έντυπο.';

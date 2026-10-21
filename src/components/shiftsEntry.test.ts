@@ -147,6 +147,7 @@ describe('a row the manager named by hand', () => {
       columnToShiftEntry(CHINA_SPICE, col, lines, 1)
     );
     expect(totals.cashCents).toBe(3000);
-    expect(totals.differenceCents).toBe(4780 - 3000);
+    // Counted minus expected: 17,80 short, so negative.
+    expect(totals.differenceCents).toBe(3000 - 4780);
   });
 });
