@@ -42,7 +42,14 @@ import {
   missingHeader,
 } from '../lib/messages';
 import { saveReportAction } from '../app/actions';
-import type { SaveReportResult } from '../server/saveReport';
+import {
+  MSG_SAVE_PHOTO_STILL_UPLOADING,
+  PHOTO_WAIT_MS,
+  bannerMessages,
+  callSave,
+  settlesWithin,
+  type SaveOutcome,
+} from './saveOutcome';
 import {
   clearShiftsDraft,
   readShiftsDraft,
@@ -76,6 +83,8 @@ import {
   MSG_PHOTO_UNREAD_SUFFIX,
   MSG_PHOTO_ATTACHED,
   MSG_PHOTO_CHECK_FIRST,
+  MSG_HINT_Z_REPORT,
+  MSG_HINT_ENVELOPE,
   MSG_PHOTO_CONFIRM_CHECKED,
   MSG_PHOTO_FAILED,
   MSG_PHOTO_LOW_CONFIDENCE,
@@ -554,7 +563,7 @@ function customLinesFrom(seed: ShiftsDraftFields | null, form: ShiftsFormConfig)
   photosRef.current = photos;
 
 
-  const [result, setResult] = useState<SaveReportResult | null>(null);
+  const [result, setResult] = useState<SaveOutcome | null>(null);
   const [attempted, setAttempted] = useState(false);
   const [draftChoice, setDraftChoice] = useState<StoredShiftsDraft | null>(null);
   const [saving, startSaveTransition] = useTransition();
@@ -708,8 +717,13 @@ function customLinesFrom(seed: ShiftsDraftFields | null, form: ShiftsFormConfig)
   );
 
   const dayExpected = totals.reduce((a, t) => a + t.expectedCents, 0);
-  const dayAccounted = totals.reduce((a, t) => a + t.accountedCents, 0);
-  const dayDifference = dayExpected - dayAccounted;
+  // Invoices are settled against the day, not a shift (shiftsEntry.ts), so
+  // they join the accounted side once, here — exactly as saveReport.ts
+  // adds them before storing. Leaving them out made a night that balanced
+  // read as short by its invoices on screen while the archive said 0.
+  const dayAccounted =
+    totals.reduce((a, t) => a + t.accountedCents, 0) + invoicesSubtotal(invoices);
+  const dayDifference = dayAccounted - dayExpected;
 
   const missing = useMemo(() => {
     const m: string[] = [];
@@ -723,79 +737,96 @@ function customLinesFrom(seed: ShiftsDraftFields | null, form: ShiftsFormConfig)
   async function handleSave() {
     setAttempted(true);
 
-    // Completes work already started, so the payload carries the keys
-    // instead of losing them. Without this a quick save posts an invoice
-    // line whose photo has not finished uploading.
-    await photos.awaitPending();
-
-    // Only after the uploads settle, because a scan finishing is what
-    // raises the question in the first place.
-    if (photos.pendingChecks().length > 0) {
-      setResult({
-        ok: false,
-        error: 'missing_fields',
-        messages: [MSG_PHOTO_CHECK_FIRST],
-        header: missingHeader(1),
-      });
-      return;
-    }
-
-    const savedFields = fields;
-
-    const payload = {
-      restaurantId: form.id,
-      businessDate: savedFields.businessDate,
-      closingManagerName: savedFields.closingManagerName,
-      signature: savedFields.signature,
-      ...(isCorrection ? { correctionReason: correctionReason.trim() } : {}),
-      shifts: savedFields.shifts.map((c, i) => ({
-        shiftIndex: i,
-        dineIn: c.dineIn,
-        ta: c.ta,
-        total: c.total,
-        // Only the brackets on screen; see keyForm above.
-        methods: withoutHiddenBrackets(c.methods, cardCount),
-      })),
-      // Only lines someone actually touched. The sheet always carries a
-      // spare blank one, and sending it would be sending a row that does
-      // not exist.
-      customLines: (savedFields.customLines ?? [])
-        .filter((l) => l.label.trim() !== '' || l.amounts.some((a) => a.trim() !== ''))
-        .map((l) => ({ label: l.label.trim(), amounts: l.amounts })),
-      // Map BEFORE filtering. A photo's slot is keyed by the line's
-      // position on the sheet, and filtering first renumbers the lines —
-      // so a blank line anywhere above would shift every photo below it
-      // onto the wrong invoice.
-      invoices: savedFields.invoices
-        .map((inv, j) => ({
-          supplier: inv.supplier,
-          invoiceNumber: inv.invoiceNumber,
-          amount: inv.amount,
-          invoiceDate: inv.invoiceDate ?? '',
-          // From the hook's ref, not from state: this runs after an await,
-          // where a render-captured value would be stale.
-          receiptPhotoUrl: photos.keyFor(String(j)),
-          // Touched lines only, as strings: the server parses amounts.
-          items: itemsForPayload(inv.items ?? []),
-        }))
-        // A line carrying only a photo still counts: the receipt is
-        // attached even if nobody typed the supplier yet.
-        .filter(
-          (inv) =>
-            hasAnyValue({
-              supplier: inv.supplier,
-              invoiceNumber: inv.invoiceNumber,
-              amount: inv.amount,
-              invoiceDate: inv.invoiceDate,
-            }) ||
-            inv.receiptPhotoUrl !== '' ||
-            inv.items.length > 0
-        ),
-    };
-
+    // Inside the transition from the first await, so the button reads
+    // «Αποθήκευση…» while photos finish uploading. Before, it sat unchanged
+    // for as long as an upload hung — a button that looks like it does
+    // nothing. The wait completes work already started, so the payload
+    // carries the photo keys rather than losing them; it is capped, and
+    // giving up says so (src/components/saveOutcome.ts).
     startSaveTransition(async () => {
-      const response = await saveReportAction(payload);
+      setResult(null);
+      if (!(await settlesWithin(photos.awaitPending(), PHOTO_WAIT_MS))) {
+        setResult({ ok: false, error: 'photo_still_uploading', messages: [MSG_SAVE_PHOTO_STILL_UPLOADING] });
+        return;
+      }
+
+      // Only after the uploads settle, because a scan finishing is what
+      // raises the question in the first place.
+      if (photos.pendingChecks().length > 0) {
+        setResult({
+          ok: false,
+          error: 'missing_fields',
+          messages: [MSG_PHOTO_CHECK_FIRST],
+          header: missingHeader(1),
+        });
+        return;
+      }
+
+      const savedFields = fields;
+
+      const payload = {
+        restaurantId: form.id,
+        businessDate: savedFields.businessDate,
+        closingManagerName: savedFields.closingManagerName,
+        signature: savedFields.signature,
+        ...(isCorrection ? { correctionReason: correctionReason.trim() } : {}),
+        shifts: savedFields.shifts.map((c, i) => ({
+          shiftIndex: i,
+          dineIn: c.dineIn,
+          ta: c.ta,
+          total: c.total,
+          // Only the brackets on screen; see keyForm above.
+          methods: withoutHiddenBrackets(c.methods, cardCount),
+        })),
+        // Only lines someone actually touched. The sheet always carries a
+        // spare blank one, and sending it would be sending a row that does
+        // not exist.
+        customLines: (savedFields.customLines ?? [])
+          .filter((l) => l.label.trim() !== '' || l.amounts.some((a) => a.trim() !== ''))
+          .map((l) => ({ label: l.label.trim(), amounts: l.amounts })),
+        // Map BEFORE filtering. A photo's slot is keyed by the line's
+        // position on the sheet, and filtering first renumbers the lines —
+        // so a blank line anywhere above would shift every photo below it
+        // onto the wrong invoice.
+        invoices: savedFields.invoices
+          .map((inv, j) => ({
+            supplier: inv.supplier,
+            invoiceNumber: inv.invoiceNumber,
+            amount: inv.amount,
+            invoiceDate: inv.invoiceDate ?? '',
+            // From the hook's ref, not from state: this runs after an await,
+            // where a render-captured value would be stale.
+            receiptPhotoUrl: photos.keyFor(String(j)),
+            // Touched lines only, as strings: the server parses amounts.
+            items: itemsForPayload(inv.items ?? []),
+          }))
+          // A line carrying only a photo still counts: the receipt is
+          // attached even if nobody typed the supplier yet.
+          .filter(
+            (inv) =>
+              hasAnyValue({
+                supplier: inv.supplier,
+                invoiceNumber: inv.invoiceNumber,
+                amount: inv.amount,
+                invoiceDate: inv.invoiceDate,
+              }) ||
+              inv.receiptPhotoUrl !== '' ||
+              inv.items.length > 0
+          ),
+      };
+
+      const response = await callSave(saveReportAction, payload);
       setResult(response);
+      // The server never saw it: keep the sheet on this device, so a
+      // reload to get a fresh page does not lose the night.
+      if (
+        !response.ok &&
+        !correction &&
+        (response.error === 'offline' || response.error === 'no_response') &&
+        typeof window !== 'undefined'
+      ) {
+        writeShiftsDraft(window.localStorage, form.id, savedFields);
+      }
       if (response.ok && typeof window !== 'undefined') {
         if (!correction) clearShiftsDraft(window.localStorage, form.id);
         baselineRef.current = savedFields;
@@ -803,7 +834,10 @@ function customLinesFrom(seed: ShiftsDraftFields | null, form: ShiftsFormConfig)
     });
   }
 
-  const showServerBanner = result !== null && (result.ok || result.error !== 'missing_fields');
+  // The date / manager / signature lines are already on the live checklist
+  // above; everything else the save refused for is shown here, the only
+  // place it can appear (src/components/saveOutcome.ts).
+  const serverMessages = bannerMessages(result, attempted ? missing : []);
 
   return (
     <div className={styles.page}>
@@ -904,6 +938,7 @@ function customLinesFrom(seed: ShiftsDraftFields | null, form: ShiftsFormConfig)
                   <input
                     className={styles.cellAmount}
                     inputMode={row.key === 'total' ? 'decimal' : 'text'}
+                    placeholder={MSG_HINT_Z_REPORT}
                     aria-label={`${shiftHeading(form.shifts, i)} — ${row.label}`}
                     value={columns[i]![row.key]}
                     onChange={(e) =>
@@ -993,6 +1028,7 @@ function customLinesFrom(seed: ShiftsDraftFields | null, form: ShiftsFormConfig)
                   key={i}
                   className={styles.cellAmount}
                   inputMode="decimal"
+                  placeholder={m.isCash ? MSG_HINT_ENVELOPE : undefined}
                   aria-label={`${shiftHeading(form.shifts, i)} — ${
                     m.countsAs ? rowLabelFor(form, m.key) : m.label || 'Άλλο'
                   }`}
@@ -1324,12 +1360,12 @@ function customLinesFrom(seed: ShiftsDraftFields | null, form: ShiftsFormConfig)
           </div>
         )}
 
-        {showServerBanner && result && (
+        {(result?.ok || serverMessages.length > 0) && (
           <div role="alert" className={styles.alert}>
-            {result.ok ? (
+            {result?.ok ? (
               <p>Αποθηκεύτηκε.</p>
             ) : (
-              result.messages.map((m) => <p key={m}>{m}</p>)
+              serverMessages.map((m) => <p key={m}>{m}</p>)
             )}
           </div>
         )}

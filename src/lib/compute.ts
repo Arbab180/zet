@@ -145,7 +145,9 @@ export function computeShift(form: ShiftsForm, entry: ShiftEntry): ShiftTotals {
     invoiceCents,
     expectedCents,
     accountedCents,
-    differenceCents: expectedCents - accountedCents,
+    // Counted minus expected, the same way round as the ledger sheets and
+    // the stored variance: minus means the till is short.
+    differenceCents: accountedCents - expectedCents,
     // Suppressed when either box holds words. Comparing a note's 0
     // against Total would report every noted column as not adding up,
     // and a warning that is always wrong is one people learn to ignore —

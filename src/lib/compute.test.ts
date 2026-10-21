@@ -74,8 +74,9 @@ describe('CHINA SPICE shift', () => {
     });
     expect(t.expectedCents).toBe(c('648,42'));
     expect(t.accountedCents).toBe(c('543,40'));
-    // the sheet carries a circled handwritten "EUR 105" marked unpaid
-    expect(t.differenceCents).toBe(c('105,02'));
+    // the sheet carries a circled handwritten "EUR 105" marked unpaid.
+    // Short, so negative — SPEC.md §4 records it as −105,02.
+    expect(t.differenceCents).toBe(c('-105,02'));
     expect(t.splitMismatch).toBe(false);
   });
 

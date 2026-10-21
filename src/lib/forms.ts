@@ -17,7 +17,9 @@ export type FormId =
 export type LedgerRow =
   | { kind: 'input'; key: string; label: string; prefix?: string; sign?: '−';
       slots?: number; items?: 'cheques' | 'pending'; note?: string;
-      editableLabel?: true; emphasis?: 'large'; retired?: true }
+      editableLabel?: true; emphasis?: 'large'; retired?: true;
+      /** Where the figure is copied from, shown in the empty box. */
+      source?: 'z_report' }
   /**
    * A total with its parts underneath — FOODY ΟΛΙΚΟ over Bamboo and
    * Chopsticks, which are two separate Foody accounts at one branch.
@@ -145,7 +147,7 @@ export const ANAMMA: LedgerForm = {
   expenseColumns: ['ΠΕΡΙΓΡΑΦΗ ΕΞΟΔΩΝ', 'ΠΟΣΟ €'],
   expenseRowCount: 14,
   rows: [
-    { kind: 'input', key: 'gross', label: 'DAILY REPORT TOTAL', emphasis: 'large' },
+    { kind: 'input', key: 'gross', label: 'DAILY REPORT TOTAL', emphasis: 'large', source: 'z_report' },
     // VISA CARD 1 was the JCC terminal — the prefix printed on the paper
     // says so. JCC is gone company-wide, so the row is retired rather
     // than deleted: the nights already filed under it still show it.
@@ -200,7 +202,7 @@ const chopsticksCommonTail: LedgerRow[] = [
 ];
 
 const engomiRows: LedgerRow[] = [
-  { kind: 'input', key: 'gross', label: 'DAILY REPORT TOTAL', emphasis: 'large' },
+  { kind: 'input', key: 'gross', label: 'DAILY REPORT TOTAL', emphasis: 'large', source: 'z_report' },
   { kind: 'input', key: 'card1', label: 'JCC VISA CARD 1', sign: '−', retired: true },
   { kind: 'input', key: 'card2', label: 'SIX CARDS', sign: '−' },
   // Self-order machines in the mall. Card takings like any other Visa
@@ -212,7 +214,7 @@ const engomiRows: LedgerRow[] = [
 ];
 
 const pindarouRows: LedgerRow[] = [
-  { kind: 'input', key: 'gross', label: 'DAILY REPORT TOTAL', emphasis: 'large' },
+  { kind: 'input', key: 'gross', label: 'DAILY REPORT TOTAL', emphasis: 'large', source: 'z_report' },
   { kind: 'input', key: 'card1', label: 'JCC VISA CARD 1', sign: '−', retired: true },
   { kind: 'input', key: 'card2', label: 'SIX CARDS', sign: '−' },
   // Every night already filed at this branch has its Foody money stored

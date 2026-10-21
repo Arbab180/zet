@@ -65,6 +65,8 @@ import {
   MSG_PHOTO_UNREAD_SUFFIX,
   MSG_PHOTO_ATTACHED,
   MSG_PHOTO_CHECK_FIRST,
+  MSG_HINT_Z_REPORT,
+  MSG_HINT_ENVELOPE,
   MSG_PHOTO_CONFIRM_CHECKED,
   MSG_PHOTO_FAILED,
   MSG_PHOTO_LOW_CONFIDENCE,
@@ -83,7 +85,14 @@ import {
   normaliseItems,
   type ReceiptItemInput,
 } from '../lib/receiptItems';
-import type { SaveReportResult } from '../server/saveReport';
+import {
+  MSG_SAVE_PHOTO_STILL_UPLOADING,
+  PHOTO_WAIT_MS,
+  bannerMessages,
+  callSave,
+  settlesWithin,
+  type SaveOutcome,
+} from './saveOutcome';
 import {
   clearDraft,
   readDraft,
@@ -509,7 +518,7 @@ export default function LedgerFormSheet({
   photosRef.current = photos;
 
   const [hasAttemptedSave, setHasAttemptedSave] = useState(false);
-  const [result, setResult] = useState<SaveReportResult | null>(null);
+  const [result, setResult] = useState<SaveOutcome | null>(null);
   // A Server Action is, by this Next.js version's own convention, an async
   // function invoked inside startTransition — that wrapping happens for
   // free when it's passed to a <form action> or <button formAction>, but
@@ -779,89 +788,105 @@ export default function LedgerFormSheet({
   async function handleSave() {
     setHasAttemptedSave(true);
 
-    // Let any in-flight photo finish attaching itself first. This does not
-    // block the save — it completes work already started, so the payload
-    // built below carries the keys rather than losing them.
-    await photos.awaitPending();
-
-    // Only after the uploads settle, because a scan finishing is what
-    // raises the question in the first place.
-    if (photos.pendingChecks().length > 0) {
-      setResult({
-        ok: false,
-        error: 'missing_fields',
-        messages: [MSG_PHOTO_CHECK_FIRST],
-        header: missingHeader(1),
-      });
-      return;
-    }
-    setResult(null);
-
-    // Captured once, now — not re-read after the response arrives, which
-    // could otherwise be a keystroke or two further along if the manager
-    // keeps typing while the request is in flight.
-    const savedFields = fields;
-
-    // Exactly the shape src/server/saveReport.ts's SaveReportInputSchema
-    // expects. Every amount is the string as typed — never parsed into
-    // cents here. That parsing, and the totals it produces, belongs to the
-    // server alone (CLAUDE.md rule 2).
-    const payload = {
-      restaurantId: form.id,
-      businessDate: savedFields.businessDate,
-      closingManagerName: savedFields.closingManagerName,
-      signature: savedFields.signature,
-      ...(isCorrection ? { correctionReason: correctionReason.trim() } : {}),
-      ledger: {
-        // Only the brackets on screen: a figure left under one that was
-        // removed is not money anyone can see, so it is not sent.
-        values: withoutHiddenBrackets(savedFields.values, cardCount),
-        labels: savedFields.labels,
-        // Trimmed to what the sheet now prints. A night filed when B3 had
-        // six slots still has six stored; posting all six at a row that
-        // now prints five is refused outright, which would have blocked
-        // a manager from correcting an unrelated figure on that night.
-        // The dropped box is already invisible on screen, and the row's
-        // breakdown will report itself as not summing until someone
-        // re-enters it — which is the visible version of this, and the
-        // one worth having.
-        slots: Object.fromEntries(
-          Object.entries(savedFields.slots).map(([key, list]) => {
-            const row = form.rows.find((r) => r.key === key);
-            const max = row && row.kind === 'input' ? (row.slots ?? 0) : 0;
-            return [key, list.slice(0, max)];
-          })
-        ),
-        // Only lines somebody touched. The sheet always carries a spare
-        // blank one; sending it would be sending a row that is not there.
-        customLines: (savedFields.customLines ?? [])
-          .filter((l) => l.label.trim() !== '' || l.amount.trim() !== '')
-          .map((l) => ({ label: l.label.trim(), amount: l.amount })),
-        expenses: savedFields.expenses
-          // From the hook's ref, not from state: this runs after an await,
-          // where a render-captured value would be stale.
-          .map((e, i) => ({
-            ...e,
-            // The ledger's one free line is the supplier line — see
-            // ExpenseLineState. Posting it under both names keeps the
-            // invoicing join populated without a second box on screen.
-            supplier: e.description,
-            receiptPhotoUrl: photos.keyFor(String(i)),
-            // Touched lines only, as strings: the server parses amounts.
-            items: itemsForPayload(e.items ?? []),
-          }))
-          // Items alone make a line real too — someone can type what was
-          // bought before the amount.
-          .filter((e) => hasAnyValue(e) || e.receiptPhotoUrl !== '' || e.items.length > 0),
-        cheques: savedFields.cheques.filter(hasAnyValue),
-        pendingReceipts: savedFields.pendingReceipts.filter(hasAnyValue),
-        counted: savedFields.counted,
-      },
-    };
-
+    // Inside the transition from the first await, so the button reads
+    // «Αποθήκευση…» while photos finish uploading. Before, it sat unchanged
+    // for as long as an upload hung — a button that looks like it does
+    // nothing. The wait completes work already started, so the payload
+    // carries the photo keys rather than losing them; it is capped, and
+    // giving up says so (src/components/saveOutcome.ts).
     startSaveTransition(async () => {
-      const response = await saveReportAction(payload);
+      setResult(null);
+      if (!(await settlesWithin(photos.awaitPending(), PHOTO_WAIT_MS))) {
+        setResult({ ok: false, error: 'photo_still_uploading', messages: [MSG_SAVE_PHOTO_STILL_UPLOADING] });
+        return;
+      }
+
+      // Only after the uploads settle, because a scan finishing is what
+      // raises the question in the first place.
+      if (photos.pendingChecks().length > 0) {
+        setResult({
+          ok: false,
+          error: 'missing_fields',
+          messages: [MSG_PHOTO_CHECK_FIRST],
+          header: missingHeader(1),
+        });
+        return;
+      }
+
+      // Captured once, now — not re-read after the response arrives, which
+      // could otherwise be a keystroke or two further along if the manager
+      // keeps typing while the request is in flight.
+      const savedFields = fields;
+
+      // Exactly the shape src/server/saveReport.ts's SaveReportInputSchema
+      // expects. Every amount is the string as typed — never parsed into
+      // cents here. That parsing, and the totals it produces, belongs to the
+      // server alone (CLAUDE.md rule 2).
+      const payload = {
+        restaurantId: form.id,
+        businessDate: savedFields.businessDate,
+        closingManagerName: savedFields.closingManagerName,
+        signature: savedFields.signature,
+        ...(isCorrection ? { correctionReason: correctionReason.trim() } : {}),
+        ledger: {
+          // Only the brackets on screen: a figure left under one that was
+          // removed is not money anyone can see, so it is not sent.
+          values: withoutHiddenBrackets(savedFields.values, cardCount),
+          labels: savedFields.labels,
+          // Trimmed to what the sheet now prints. A night filed when B3 had
+          // six slots still has six stored; posting all six at a row that
+          // now prints five is refused outright, which would have blocked
+          // a manager from correcting an unrelated figure on that night.
+          // The dropped box is already invisible on screen, and the row's
+          // breakdown will report itself as not summing until someone
+          // re-enters it — which is the visible version of this, and the
+          // one worth having.
+          slots: Object.fromEntries(
+            Object.entries(savedFields.slots).map(([key, list]) => {
+              const row = form.rows.find((r) => r.key === key);
+              const max = row && row.kind === 'input' ? (row.slots ?? 0) : 0;
+              return [key, list.slice(0, max)];
+            })
+          ),
+          // Only lines somebody touched. The sheet always carries a spare
+          // blank one; sending it would be sending a row that is not there.
+          customLines: (savedFields.customLines ?? [])
+            .filter((l) => l.label.trim() !== '' || l.amount.trim() !== '')
+            .map((l) => ({ label: l.label.trim(), amount: l.amount })),
+          expenses: savedFields.expenses
+            // From the hook's ref, not from state: this runs after an await,
+            // where a render-captured value would be stale.
+            .map((e, i) => ({
+              ...e,
+              // The ledger's one free line is the supplier line — see
+              // ExpenseLineState. Posting it under both names keeps the
+              // invoicing join populated without a second box on screen.
+              supplier: e.description,
+              receiptPhotoUrl: photos.keyFor(String(i)),
+              // Touched lines only, as strings: the server parses amounts.
+              items: itemsForPayload(e.items ?? []),
+            }))
+            // Items alone make a line real too — someone can type what was
+            // bought before the amount.
+            .filter((e) => hasAnyValue(e) || e.receiptPhotoUrl !== '' || e.items.length > 0),
+          cheques: savedFields.cheques.filter(hasAnyValue),
+          pendingReceipts: savedFields.pendingReceipts.filter(hasAnyValue),
+          counted: savedFields.counted,
+        },
+      };
+
+      const response = await callSave(saveReportAction, payload);
       setResult(response);
+      // The server never saw it: keep the sheet on this device, so a
+      // reload to get a fresh page does not lose the night.
+      if (
+        !response.ok &&
+        !correction &&
+        (response.error === 'offline' || response.error === 'no_response') &&
+        typeof window !== 'undefined'
+      ) {
+        writeDraft(window.localStorage, form.id, savedFields);
+      }
       if (response.ok && typeof window !== 'undefined') {
         clearDraft(window.localStorage, form.id);
         baselineRef.current = savedFields;
@@ -869,12 +894,12 @@ export default function LedgerFormSheet({
     });
   }
 
-  // The live checklist already shows exactly these three Greek sentences
-  // as the manager types, updating on every keystroke. Showing the same
-  // strings again from the server response would just repeat them; every
-  // OTHER outcome (not authorised, a save conflict, a real bug) has no
-  // other place to appear, so it gets its own banner below.
-  const showServerBanner = result !== null && (result.ok || result.error !== 'missing_fields');
+  // The live checklist already shows the date / manager / signature lines
+  // as the manager types, so those are not repeated here. Every OTHER line
+  // is — the receipt check, a not-authorised, a lost connection — because
+  // this banner is the only place it can appear. Hiding the whole
+  // 'missing_fields' result once made Save look dead (saveOutcome.ts).
+  const serverMessages = bannerMessages(result, hasAttemptedSave ? localMissing : []);
 
   return (
     <div className={styles.page}>
@@ -1153,6 +1178,7 @@ export default function LedgerFormSheet({
                     // locked box would leave the person looking at a
                     // mismatch warning with no way to answer it.
                     data-derived={rowHasBreakdown ? '' : undefined}
+                    placeholder={row.source === 'z_report' ? MSG_HINT_Z_REPORT : undefined}
                     aria-label={row.editableLabel ? 'Ποσό γραμμής' : row.label}
                   />
                 </div>
@@ -1420,6 +1446,7 @@ export default function LedgerFormSheet({
               className={styles.cashInput}
               type="text"
               inputMode="decimal"
+              placeholder={MSG_HINT_ENVELOPE}
               value={counted}
               onChange={(e) => setCounted(sanitizeAmountInput(e.target.value))}
             />
@@ -1452,18 +1479,17 @@ export default function LedgerFormSheet({
           </div>
         )}
 
-        {showServerBanner && result && !result.ok && (
+        {serverMessages.length > 0 && (
           <div role="alert" className={styles.alert}>
-            {result.header && <p>{result.header}</p>}
             <ul>
-              {result.messages.map((m, i) => (
+              {serverMessages.map((m, i) => (
                 <li key={i}>{m}</li>
               ))}
             </ul>
           </div>
         )}
 
-        {showServerBanner && result && result.ok && (
+        {result?.ok && (
           <div role="status" className={styles.success}>
             <p>Αποθηκεύτηκε.</p>
           </div>
