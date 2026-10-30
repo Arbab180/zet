@@ -372,14 +372,17 @@ export type SaveReportInput = z.infer<typeof SaveReportInputSchema>;
 // ── Amount parsing ────────────────────────────────────────────────────────
 
 /**
- * What a manager may type into a money field. No minus sign: the paper has
- * no negative entry, and every amount column in the schema is
- * CHECK (amount_cents >= 0), so a negative input would surface as a
- * constraint violation instead of an instruction. The computed figures
- * (expected cash, variance, difference) may of course go negative — they
- * are not inputs and are not parsed here.
+ * What a manager may type into a money field. No minus sign, except in
+ * the envelope cash box (ledger `counted`, China Spice's CASH method):
+ * some nights the till goes negative and the shortfall is made up at the
+ * next close-out (Arbab, 30/10/2026). Every other amount column in the
+ * schema is CHECK (amount_cents >= 0), so a negative input there would
+ * surface as a constraint violation instead of an instruction. The
+ * computed figures (expected cash, variance, difference) may of course go
+ * negative — they are not inputs and are not parsed here.
  */
 const ALLOWED_AMOUNT_CHARS = /^[0-9.,\s€]*$/;
+const ALLOWED_SIGNED_AMOUNT_CHARS = /^\s*-?[0-9.,\s€]*$/;
 
 interface AmountProblem {
   path: string;
@@ -388,8 +391,8 @@ interface AmountProblem {
 
 function makeAmountParser() {
   const problems: AmountProblem[] = [];
-  function toCents(raw: string, path: string): Cents {
-    if (!ALLOWED_AMOUNT_CHARS.test(raw)) {
+  function toCents(raw: string, path: string, signed = false): Cents {
+    if (!(signed ? ALLOWED_SIGNED_AMOUNT_CHARS : ALLOWED_AMOUNT_CHARS).test(raw)) {
       problems.push({ path, message: MSG_ONLY_NUMBERS });
       return 0;
     }
@@ -798,7 +801,7 @@ function prepareLedger(
     ...p,
     amountCents: toCents(p.amount, `ledger.pendingReceipts[${i}].amount`),
   }));
-  const countedCents = toCents(ledger.counted, 'ledger.counted');
+  const countedCents = toCents(ledger.counted, 'ledger.counted', true);
 
   if (problems.length > 0) return amountFailure(problems);
 
@@ -905,7 +908,7 @@ function prepareShifts(
     const p = `shifts[${s.shiftIndex}]`;
     const methods = form.methods.map((m) => ({
       methodKey: m.key,
-      amountCents: toCents(s.methods[m.key] ?? '', `${p}.methods.${m.key}`),
+      amountCents: toCents(s.methods[m.key] ?? '', `${p}.methods.${m.key}`, m.isCash === true),
     }));
     // Same shape as a method for storage — zet_shift_payment takes the
     // key as free text — but kept out of entry.methods below, which is

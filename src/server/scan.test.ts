@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { scanReceipt } from './scan';
-import { parseCents } from '../lib/money';
+import { parsePrintedCents } from '../lib/money';
 
 const CONFIG = { apiKey: 'test-key', model: 'test-model' };
 
@@ -14,7 +14,7 @@ function replying(text: string): typeof fetch {
 }
 
 async function scan(text: string) {
-  return scanReceipt(Buffer.from('x'), 'image/jpeg', parseCents, CONFIG, replying(text));
+  return scanReceipt(Buffer.from('x'), 'image/jpeg', parsePrintedCents, CONFIG, replying(text));
 }
 
 const HEAD =

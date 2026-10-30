@@ -4,7 +4,7 @@ import { authorizeRestaurantAccess } from '../../../../lib/authorize';
 import { getRestaurantRole, withUserTransaction } from '../../../../lib/db';
 import { keyBelongsTo, readObject, readStorageConfig } from '../../../../server/storage';
 import { scanReceipt } from '../../../../server/scan';
-import { parseCents } from '../../../../lib/money';
+import { parsePrintedCents } from '../../../../lib/money';
 
 /**
  * Reads the amount off a receipt already uploaded to R2.
@@ -75,7 +75,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       ? 'image/webp'
       : 'image/jpeg';
 
-  const outcome = await scanReceipt(bytes, mediaType, parseCents);
+  const outcome = await scanReceipt(bytes, mediaType, parsePrintedCents);
 
   if (!outcome.ok) {
     return NextResponse.json(

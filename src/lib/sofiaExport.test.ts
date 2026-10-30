@@ -126,6 +126,22 @@ describe('ledgerJournal', () => {
   });
 });
 
+describe('ledgerJournal, envelope below zero', () => {
+  it('credits a negative envelope and still balances', () => {
+    // €1.000 takings, €400 on cards, €620 paid out of the till: the
+    // envelope is €20 down, made up at the next close-out.
+    const j = ledgerJournal(anamma, {
+      lines: [line('gross', 100000), line('card2', 40000)],
+      expenses: [{ description: null, supplierName: 'ΛΑΙΚΗ', invoiceNumber: '', amountCents: 62000 }],
+      countedCents: -2000,
+    });
+    expect(journalBalances(j)).toBe(true);
+    expect(j.find((l) => l.kind === 'cash')).toMatchObject({ sign: 'C', cents: 2000 });
+    expect(j.every((l) => l.cents > 0)).toBe(true);
+    expect(j.some((l) => l.kind === 'short' || l.kind === 'over')).toBe(false);
+  });
+});
+
 describe('shiftsJournal', () => {
   it('sums the shifts into one day and balances', () => {
     const j = shiftsJournal(chinaSpice, {
@@ -151,6 +167,20 @@ describe('shiftsJournal', () => {
     });
     expect(j.find((l) => l.rowKey === key)?.details).toBe('ΝΙΜΑ');
     expect(journalBalances(j)).toBe(true);
+  });
+});
+
+describe('shiftsJournal, CASH below zero', () => {
+  it('credits a negative day of cash and still balances', () => {
+    const j = shiftsJournal(chinaSpice, {
+      shifts: [
+        { totalCents: 30000, payments: [{ methodKey: 'CASH', amountCents: -1900 }, { methodKey: 'GAP', amountCents: 30000 }] },
+      ],
+      invoices: [{ supplierName: 'ΚΡΕΑΤΑ', invoiceNumber: '77', amountCents: 1900 }],
+    });
+    expect(journalBalances(j)).toBe(true);
+    expect(j.find((l) => l.kind === 'cash')).toMatchObject({ sign: 'C', cents: 1900 });
+    expect(j.every((l) => l.cents > 0)).toBe(true);
   });
 });
 

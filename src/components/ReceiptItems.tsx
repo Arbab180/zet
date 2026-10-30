@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { formatCents, sanitizeAmountInput } from '../lib/money';
+import { AmountInput } from './AmountInput';
 import {
   MAX_ITEM_NAME,
   MAX_ITEM_QTY,
@@ -112,12 +113,10 @@ export default function ReceiptItems({
             onChange={(ev) => setItem(i, { qty: ev.target.value })}
             aria-label={`${rowLabel} — ${MSG_ITEM_QTY} ${i + 1}`}
           />
-          <input
-            type="text"
-            inputMode="decimal"
+          <AmountInput
             className={styles.amount}
             value={it.amount}
-            onChange={(ev) => setItem(i, { amount: sanitizeAmountInput(ev.target.value) })}
+            onValue={(v) => setItem(i, { amount: sanitizeAmountInput(v) })}
             aria-label={`${rowLabel} — ${MSG_ITEM_AMOUNT} ${i + 1}`}
           />
           <button
