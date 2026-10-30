@@ -5,7 +5,6 @@ import {
   formatCents,
   sanitizeAmountInput,
   sanitizeSignedAmountInput,
-  flipSign,
   amountDisplay,
   rawFromEdit,
 } from './money';
@@ -78,12 +77,6 @@ describe('negative envelope cash', () => {
     expect(sanitizeSignedAmountInput('--19')).toBe('-19');
     expect(sanitizeAmountInput('-19')).toBe('19');
   });
-  it('flips the sign with the ± button', () => {
-    expect(flipSign('19,50')).toBe('-19,50');
-    expect(flipSign('-19,50')).toBe('19,50');
-    expect(flipSign('')).toBe('-');
-    expect(flipSign('-')).toBe('');
-  });
 });
 
 describe('auto decimal (Arbab, 30/10/2026)', () => {
@@ -145,6 +138,13 @@ describe('auto decimal (Arbab, 30/10/2026)', () => {
 
   it('keeps the minus through the shown text', () => {
     expect(rawFromEdit('-1946', '-19,465')).toBe('-19465');
-    expect(flipSign('1946')).toBe('-1946');
+  });
+
+  it('takes a minus typed from the keyboard, first or in front of a figure', () => {
+    expect(sanitizeSignedAmountInput(rawFromEdit('', '-'))).toBe('-');
+    expect(rawFromEdit('-194', '-1946')).toBe('-1946');
+    expect(amountDisplay('-1946')).toBe('-19,46');
+    expect(rawFromEdit('1946', '-19,46')).toBe('-1946');
+    expect(parseCents('-1946')).toBe(-1946);
   });
 });

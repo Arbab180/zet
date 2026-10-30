@@ -141,11 +141,6 @@ export function sanitizeSignedAmountInput(raw: string): string {
   return negative ? `-${rest}` : rest;
 }
 
-/** The ± button: the iPhone decimal keypad has no minus key. */
-export function flipSign(raw: string): string {
-  const t = raw.trim();
-  return t.startsWith('-') ? t.slice(1) : `-${t}`;
-}
 
 
 /**

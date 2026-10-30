@@ -612,29 +612,6 @@
   font-variant-numeric: tabular-nums;
   color: var(--zet-muted);
 }
-/* The envelope box and its ± (the iPhone decimal keypad has no minus). */
-.cashEntry {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-.signFlip {
-  background: none;
-  border: 1px solid var(--zet-rule-strong);
-  border-radius: 4px;
-  min-width: 36px;
-  padding: 0.3rem 0.5rem;
-  font: inherit;
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: var(--zet-ink);
-  cursor: pointer;
-}
-.signFlip[aria-pressed='true'] {
-  background: var(--zet-blue);
-  border-color: var(--zet-blue);
-  color: #fff;
-}
 .cashInput {
   width: 8rem;
   text-align: right;
@@ -758,7 +735,6 @@
   .amountInput,
   .slotInput,
   .cashInput,
-  .signFlip,
   .editableLabelInput,
   .expenseDescription input,
   .expenseAmount input,

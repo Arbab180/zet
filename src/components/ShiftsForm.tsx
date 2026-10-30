@@ -30,7 +30,7 @@
 import React, { useEffect, useId, useMemo, useRef, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { rowLabelFor, type ShiftsForm as ShiftsFormConfig } from '../lib/forms';
-import { flipSign, formatCents, parseCents, sanitizeAmountInput, sanitizeSignedAmountInput } from '../lib/money';
+import { formatCents, parseCents, sanitizeAmountInput, sanitizeSignedAmountInput } from '../lib/money';
 import { AmountInput } from './AmountInput';
 import { computeShift, type ShiftTotals } from '../lib/compute';
 import { columnToShiftEntry } from './shiftsEntry';
@@ -1036,6 +1036,10 @@ function customLinesFrom(seed: ShiftsDraftFields | null, form: ShiftsFormConfig)
                 <AmountInput
                   key={i}
                   className={styles.cellAmount}
+                  // CASH may go below zero (30/10/2026) and the minus is
+                  // typed: the iPhone decimal keypad has none, the text
+                  // keyboard's 123 page does.
+                  inputMode={m.isCash ? 'text' : 'decimal'}
                   placeholder={m.isCash ? MSG_HINT_ENVELOPE : undefined}
                   aria-label={`${shiftHeading(form.shifts, i)} — ${
                     m.countsAs ? rowLabelFor(form, m.key) : m.label || 'Άλλο'
@@ -1045,29 +1049,6 @@ function customLinesFrom(seed: ShiftsDraftFields | null, form: ShiftsFormConfig)
                 />
               ))}
             </div>
-            {/* CASH may go below zero (30/10/2026): one ± per shift, because
-                the iPhone decimal keypad has no minus key. */}
-            {m.isCash && (
-              <div className={`${styles.gridRow} ${styles.gridMachineRow}`}>
-                <span className={styles.rowLabel} />
-                {form.shifts.map((_, i) => {
-                  const raw = columns[i]!.methods[m.key] ?? '';
-                  return (
-                    <span key={i} className={styles.cellTotal}>
-                      <button
-                        type="button"
-                        className={styles.signFlip}
-                        onClick={() => setMethod(i, m.key, flipSign(raw))}
-                        aria-label={`${shiftHeading(form.shifts, i)} — ${m.label}: αλλαγή προσήμου`}
-                        aria-pressed={raw.trim().startsWith('-')}
-                      >
-                        ±
-                      </button>
-                    </span>
-                  );
-                })}
-              </div>
-            )}
             {/* Under SIX CARDS while it has no brackets, under the last
                 bracket once it has. */}
             {((m.key === form.cardRowKey && cardCount === 0) ||

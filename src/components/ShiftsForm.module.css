@@ -850,30 +850,6 @@
     min-width: 40px;
   }
 }
-/* The ± under CASH. Pressed (blue) while that shift's cash is negative. */
-.signFlip {
-  background: none;
-  border: 1px solid var(--zet-rule-strong);
-  border-radius: 6px;
-  min-width: 32px;
-  padding: 0.1rem 0.5rem;
-  font: inherit;
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--zet-ink);
-  cursor: pointer;
-}
-.signFlip[aria-pressed='true'] {
-  background: var(--zet-blue);
-  border-color: var(--zet-blue);
-  color: #fff;
-}
-@media (max-width: 700px), (pointer: coarse) {
-  .signFlip {
-    min-height: 40px;
-    min-width: 40px;
-  }
-}
 .cellTotal[data-off] {
   color: var(--zet-error);
   font-weight: 700;

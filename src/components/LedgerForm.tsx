@@ -45,7 +45,7 @@ import {
 } from '../lib/cardMachines';
 import Link from 'next/link';
 import type { LedgerForm as LedgerFormConfig } from '../lib/forms';
-import { flipSign, formatCents, parseCents, sanitizeAmountInput, sanitizeSignedAmountInput } from '../lib/money';
+import { formatCents, parseCents, sanitizeAmountInput, sanitizeSignedAmountInput } from '../lib/money';
 import { AmountInput } from './AmountInput';
 import { MAX_CUSTOM_LABEL, MAX_CUSTOM_LINES, normaliseCustomLabel } from '../lib/customLine';
 import { computeLedger, linesAgree, slotsAgree } from '../lib/compute';
@@ -1432,27 +1432,18 @@ export default function LedgerFormSheet({
             <label className={styles.cashLabel} htmlFor={`${uid}-counted`}>
               {form.cashLabel}
             </label>
-            <span className={styles.cashEntry}>
-              {/* The envelope may go below zero; the shortfall is made up
-                  at the next close-out (30/10/2026). The iPhone decimal
-                  keypad has no minus key, hence the button. */}
-              <button
-                type="button"
-                className={styles.signFlip}
-                onClick={() => setCounted(flipSign(counted))}
-                aria-label="Αλλαγή προσήμου (αρνητικό ποσό)"
-                aria-pressed={counted.trim().startsWith('-')}
-              >
-                ±
-              </button>
-              <AmountInput
-                id={`${uid}-counted`}
-                className={styles.cashInput}
-                placeholder={MSG_HINT_ENVELOPE}
-                value={counted}
-                onValue={(v) => setCounted(sanitizeSignedAmountInput(v))}
-              />
-            </span>
+            {/* The envelope may go below zero; the shortfall is made up at
+                the next close-out (30/10/2026). The minus is typed: the
+                iPhone decimal keypad has none, the text keyboard's 123
+                page does. */}
+            <AmountInput
+              id={`${uid}-counted`}
+              className={styles.cashInput}
+              inputMode="text"
+              placeholder={MSG_HINT_ENVELOPE}
+              value={counted}
+              onValue={(v) => setCounted(sanitizeSignedAmountInput(v))}
+            />
           </div>
           <div className={styles.cashRow}>
             <span className={styles.cashLabel}>Διαφορά</span>
