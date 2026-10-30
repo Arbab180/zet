@@ -8,7 +8,7 @@
  *     C  sales            — DAILY REPORT TOTAL / ΤΑΜΕΙΟ Total
  *     D  every deduction  — cards, platforms, cheques, named lines …
  *     D  every expense / invoice paid out of the till
- *     D  cash             — what was actually counted
+ *     D  cash             — what was actually counted (C when below zero)
  *     D  cash short   or  C  cash over   — the difference
  *
  * The difference line is what makes EVERY night balance, including the
@@ -51,6 +51,17 @@ const OVER_LABEL = 'ΠΛΕΟΝΑΣΜΑ ΤΑΜΕΙΟΥ';
 function differenceLine(shortCents: Cents): JournalLine[] {
   if (shortCents > 0) return [{ sign: 'D', cents: shortCents, details: SHORT_LABEL, kind: 'short' }];
   if (shortCents < 0) return [{ sign: 'C', cents: -shortCents, details: OVER_LABEL, kind: 'over' }];
+  return [];
+}
+
+/**
+ * The envelope cash. Debited as usual; on a night the till went below
+ * zero (30/10/2026) it is credited instead, because a journal line's
+ * amount is always positive and the sign carries the direction.
+ */
+function cashLine(cents: Cents, details: string): JournalLine[] {
+  if (cents > 0) return [{ sign: 'D', cents, details, kind: 'cash' }];
+  if (cents < 0) return [{ sign: 'C', cents: -cents, details, kind: 'cash' }];
   return [];
 }
 
@@ -137,9 +148,7 @@ export function ledgerJournal(form: LedgerForm, night: LedgerNight): JournalLine
     out.push({ sign: 'D', cents: e.amountCents, details: expenseDetails(e), kind: 'expense' });
   }
 
-  if (night.countedCents !== 0) {
-    out.push({ sign: 'D', cents: night.countedCents, details: form.cashLabel, kind: 'cash' });
-  }
+  out.push(...cashLine(night.countedCents, form.cashLabel));
 
   const expected = grossCents - deducted - expensesCents;
   out.push(...differenceLine(expected - night.countedCents));
@@ -216,7 +225,7 @@ export function shiftsJournal(form: ShiftsForm, night: ShiftsNight): JournalLine
     out.push({ sign: 'D', cents: inv.amountCents, details: expenseDetails(inv), kind: 'expense' });
   }
 
-  if (cash !== 0) out.push({ sign: 'D', cents: cash, details: 'CASH', kind: 'cash' });
+  out.push(...cashLine(cash, 'CASH'));
 
   const expected = totalCents - nonCash;
   const accounted = cash + invoicesCents;

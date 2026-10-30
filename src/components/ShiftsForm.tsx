@@ -30,7 +30,8 @@
 import React, { useEffect, useId, useMemo, useRef, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { rowLabelFor, type ShiftsForm as ShiftsFormConfig } from '../lib/forms';
-import { formatCents, parseCents, sanitizeAmountInput } from '../lib/money';
+import { flipSign, formatCents, parseCents, sanitizeAmountInput, sanitizeSignedAmountInput } from '../lib/money';
+import { AmountInput } from './AmountInput';
 import { computeShift, type ShiftTotals } from '../lib/compute';
 import { columnToShiftEntry } from './shiftsEntry';
 import { MAX_CUSTOM_LABEL, MAX_CUSTOM_LINES } from '../lib/customLine';
@@ -698,7 +699,18 @@ function customLinesFrom(seed: ShiftsDraftFields | null, form: ShiftsFormConfig)
   function setMethod(index: number, key: string, raw: string) {
     setColumns((prev) =>
       prev.map((c, i) =>
-        i === index ? { ...c, methods: { ...c.methods, [key]: sanitizeAmountInput(raw) } } : c
+        i === index
+          ? {
+              ...c,
+              methods: {
+                ...c.methods,
+                // Only CASH may go below zero (the envelope; 30/10/2026).
+                [key]: form.methods.find((m) => m.key === key)?.isCash
+                  ? sanitizeSignedAmountInput(raw)
+                  : sanitizeAmountInput(raw),
+              },
+            }
+          : c
       )
     );
   }
@@ -935,18 +947,15 @@ function customLinesFrom(seed: ShiftsDraftFields | null, form: ShiftsFormConfig)
                       does not: it is what the night reconciles against, so
                       it keeps the strip-as-you-type guard that stops a
                       stray letter swallowing a real figure. */}
-                  <input
+                  <AmountInput
                     className={styles.cellAmount}
                     inputMode={row.key === 'total' ? 'decimal' : 'text'}
                     placeholder={MSG_HINT_Z_REPORT}
                     aria-label={`${shiftHeading(form.shifts, i)} — ${row.label}`}
                     value={columns[i]![row.key]}
-                    onChange={(e) =>
+                    onValue={(v) =>
                       updateColumn(i, {
-                        [row.key]:
-                          row.key === 'total'
-                            ? sanitizeAmountInput(e.target.value)
-                            : e.target.value,
+                        [row.key]: row.key === 'total' ? sanitizeAmountInput(v) : v,
                       })
                     }
                   />
@@ -1024,19 +1033,41 @@ function customLinesFrom(seed: ShiftsDraftFields | null, form: ShiftsFormConfig)
                 )}
               </span>
               {form.shifts.map((_, i) => (
-                <input
+                <AmountInput
                   key={i}
                   className={styles.cellAmount}
-                  inputMode="decimal"
                   placeholder={m.isCash ? MSG_HINT_ENVELOPE : undefined}
                   aria-label={`${shiftHeading(form.shifts, i)} — ${
                     m.countsAs ? rowLabelFor(form, m.key) : m.label || 'Άλλο'
                   }`}
                   value={columns[i]!.methods[m.key] ?? ''}
-                  onChange={(e) => setMethod(i, m.key, e.target.value)}
+                  onValue={(v) => setMethod(i, m.key, v)}
                 />
               ))}
             </div>
+            {/* CASH may go below zero (30/10/2026): one ± per shift, because
+                the iPhone decimal keypad has no minus key. */}
+            {m.isCash && (
+              <div className={`${styles.gridRow} ${styles.gridMachineRow}`}>
+                <span className={styles.rowLabel} />
+                {form.shifts.map((_, i) => {
+                  const raw = columns[i]!.methods[m.key] ?? '';
+                  return (
+                    <span key={i} className={styles.cellTotal}>
+                      <button
+                        type="button"
+                        className={styles.signFlip}
+                        onClick={() => setMethod(i, m.key, flipSign(raw))}
+                        aria-label={`${shiftHeading(form.shifts, i)} — ${m.label}: αλλαγή προσήμου`}
+                        aria-pressed={raw.trim().startsWith('-')}
+                      >
+                        ±
+                      </button>
+                    </span>
+                  );
+                })}
+              </div>
+            )}
             {/* Under SIX CARDS while it has no brackets, under the last
                 bracket once it has. */}
             {((m.key === form.cardRowKey && cardCount === 0) ||
@@ -1078,15 +1109,14 @@ function customLinesFrom(seed: ShiftsDraftFields | null, form: ShiftsFormConfig)
                   onChange={(e) => setCustomLabel(li, e.target.value)}
                 />
                 {form.shifts.map((_, i) => (
-                  <input
+                  <AmountInput
                     key={i}
                     className={styles.cellAmount}
-                    inputMode="decimal"
                     aria-label={`${shiftHeading(form.shifts, i)} — ${
                       line.label.trim() || `γραμμή ${li + 1}`
                     }`}
                     value={line.amounts[i] ?? ''}
-                    onChange={(e) => setCustomAmount(li, i, e.target.value)}
+                    onValue={(v) => setCustomAmount(li, i, v)}
                   />
                 ))}
               </div>
@@ -1163,13 +1193,10 @@ function customLinesFrom(seed: ShiftsDraftFields | null, form: ShiftsFormConfig)
                         </label>
                         <label className={`${styles.invoiceField} ${styles.invoiceFieldAmount}`}>
                           <span className={styles.invoiceFieldLabel}>Ποσό</span>
-                          <input
+                          <AmountInput
                             className={styles.invoiceAmount}
-                            inputMode="decimal"
                             value={inv.amount}
-                            onChange={(e) =>
-                              setInvoice(j, { amount: sanitizeAmountInput(e.target.value) })
-                            }
+                            onValue={(v) => setInvoice(j, { amount: sanitizeAmountInput(v) })}
                           />
                         </label>
                         <label className={styles.photoButton}>

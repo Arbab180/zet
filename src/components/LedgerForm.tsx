@@ -45,7 +45,8 @@ import {
 } from '../lib/cardMachines';
 import Link from 'next/link';
 import type { LedgerForm as LedgerFormConfig } from '../lib/forms';
-import { formatCents, parseCents, sanitizeAmountInput } from '../lib/money';
+import { flipSign, formatCents, parseCents, sanitizeAmountInput, sanitizeSignedAmountInput } from '../lib/money';
+import { AmountInput } from './AmountInput';
 import { MAX_CUSTOM_LABEL, MAX_CUSTOM_LINES, normaliseCustomLabel } from '../lib/customLine';
 import { computeLedger, linesAgree, slotsAgree } from '../lib/compute';
 import {
@@ -1087,12 +1088,10 @@ export default function LedgerFormSheet({
                       </div>
                       <div className={styles.signCell} />
                       <div className={styles.amountCell}>
-                        <input
+                        <AmountInput
                           className={styles.amountInput}
-                          type="text"
-                          inputMode="decimal"
                           value={values[child.key] ?? ''}
-                          onChange={(e) => setValue(child.key, e.target.value)}
+                          onValue={(v) => setValue(child.key, v)}
                           aria-label={`${row.label} — ${child.label}`}
                         />
                       </div>
@@ -1130,12 +1129,10 @@ export default function LedgerFormSheet({
                     ? Array.from({ length: row.slots }, (_, i) => (
                         <span key={i} className={styles.slotGroup}>
                           <span className={styles.slotLetter}>{GREEK_ORDER_LETTERS[i]})</span>
-                          <input
+                          <AmountInput
                             className={styles.slotInput}
-                            type="text"
-                            inputMode="decimal"
                             value={rowSlots[i] ?? ''}
-                            onChange={(e) => setSlot(row.key, i, e.target.value)}
+                            onValue={(v) => setSlot(row.key, i, v)}
                             aria-label={`${row.label || 'γραμμή'} — παραγγελία ${GREEK_ORDER_LETTERS[i]}`}
                           />
                         </span>
@@ -1166,12 +1163,10 @@ export default function LedgerFormSheet({
                 <div className={styles.signCell}>{row.sign ?? ''}</div>
 
                 <div className={styles.amountCell}>
-                  <input
+                  <AmountInput
                     className={styles.amountInput}
-                    type="text"
-                    inputMode="decimal"
                     value={rowValue}
-                    onChange={(e) => setValue(row.key, e.target.value)}
+                    onValue={(v) => setValue(row.key, v)}
                     // Filled in from the α)…ε) boxes as they are typed, but
                     // never locked. A row whose breakdown does not add up
                     // is a real thing this sheet is meant to SHOW — and a
@@ -1229,13 +1224,11 @@ export default function LedgerFormSheet({
                     </div>
                     <div className={styles.signCell}>−</div>
                     <div className={styles.amountCell}>
-                      <input
+                      <AmountInput
                         className={styles.amountInput}
-                        type="text"
-                        inputMode="decimal"
                         value={line.amount}
                         aria-label={line.label.trim() || `Ποσό γραμμής ${li + 1}`}
-                        onChange={(e) => setCustomAmount(li, e.target.value)}
+                        onValue={(v) => setCustomAmount(li, v)}
                       />
                     </div>
                   </div>
@@ -1272,11 +1265,9 @@ export default function LedgerFormSheet({
                   />
                 </div>
                 <div className={styles.expenseAmount}>
-                  <input
-                    type="text"
-                    inputMode="decimal"
+                  <AmountInput
                     value={e.amount}
-                    onChange={(ev) => setExpenseField(i, 'amount', ev.target.value)}
+                    onValue={(v) => setExpenseField(i, 'amount', v)}
                     aria-label={`Έξοδο ${i + 1} — ποσό`}
                   />
                 </div>
@@ -1441,15 +1432,27 @@ export default function LedgerFormSheet({
             <label className={styles.cashLabel} htmlFor={`${uid}-counted`}>
               {form.cashLabel}
             </label>
-            <input
-              id={`${uid}-counted`}
-              className={styles.cashInput}
-              type="text"
-              inputMode="decimal"
-              placeholder={MSG_HINT_ENVELOPE}
-              value={counted}
-              onChange={(e) => setCounted(sanitizeAmountInput(e.target.value))}
-            />
+            <span className={styles.cashEntry}>
+              {/* The envelope may go below zero; the shortfall is made up
+                  at the next close-out (30/10/2026). The iPhone decimal
+                  keypad has no minus key, hence the button. */}
+              <button
+                type="button"
+                className={styles.signFlip}
+                onClick={() => setCounted(flipSign(counted))}
+                aria-label="Αλλαγή προσήμου (αρνητικό ποσό)"
+                aria-pressed={counted.trim().startsWith('-')}
+              >
+                ±
+              </button>
+              <AmountInput
+                id={`${uid}-counted`}
+                className={styles.cashInput}
+                placeholder={MSG_HINT_ENVELOPE}
+                value={counted}
+                onValue={(v) => setCounted(sanitizeSignedAmountInput(v))}
+              />
+            </span>
           </div>
           <div className={styles.cashRow}>
             <span className={styles.cashLabel}>Διαφορά</span>

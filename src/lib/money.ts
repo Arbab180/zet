@@ -18,6 +18,34 @@ export function formatCents(cents: Cents): string {
 }
 
 /**
+ * Four digits or more with no comma or dot: the last two are cents.
+ * Managers key prices the way a till does, so 1946 is 19,46 and 12345 is
+ * 123,45. Up to three digits stay whole euros: 5 is 5,00, 194 is 194,00
+ * (Arbab, 30/10/2026). Anything with a comma or dot is read as typed.
+ */
+const AUTO_DECIMAL = /^(-?)(\d{4,})$/;
+
+/** Is this a figure the auto-decimal rule rewrites? */
+export function isAutoDecimal(raw: string): boolean {
+  return AUTO_DECIMAL.test(raw.trim().replace(/[€\s]/g, ''));
+}
+
+/**
+ * Parse what a manager typed into a money box: the auto-decimal rule
+ * above, then parsePrintedCents. Never use this for a figure read off a
+ * printed receipt — "1500" printed on an invoice is fifteen hundred.
+ */
+export function parseCents(input: string | null | undefined): Cents {
+  if (input == null) return 0;
+  const m = AUTO_DECIMAL.exec(String(input).trim().replace(/[€\s]/g, ''));
+  if (m) {
+    const cents = Number(m[2]);
+    return m[1] && cents !== 0 ? -cents : cents;
+  }
+  return parsePrintedCents(input);
+}
+
+/**
  * Parse an amount a Cypriot manager might type.
  *
  * el-GR groups thousands with a DOT and uses a comma for decimals, so
@@ -28,9 +56,13 @@ export function formatCents(cents: Cents): string {
  *
  * Both conventions are accepted, because people type both.
  */
-export function parseCents(input: string | null | undefined): Cents {
+export function parsePrintedCents(input: string | null | undefined): Cents {
   if (input == null) return 0;
   let s = String(input).trim().replace(/[€\s]/g, '');
+  // A leading minus is only ever typed into the envelope cash box (see
+  // sanitizeSignedAmountInput); every other box strips it before here.
+  const negative = s.startsWith('-');
+  if (negative) s = s.slice(1);
   if (!s) return 0;
 
   const lastComma = s.lastIndexOf(',');
@@ -53,7 +85,9 @@ export function parseCents(input: string | null | undefined): Cents {
   }
 
   const n = parseFloat(s);
-  return Number.isFinite(n) ? Math.round(n * 100) : 0;
+  if (!Number.isFinite(n)) return 0;
+  const cents = Math.round(n * 100);
+  return negative && cents !== 0 ? -cents : cents;
 }
 
 /** Every character an amount may contain — digits, both separators, a
@@ -93,4 +127,54 @@ export function splitFigureOrNote(raw: string): { cents: Cents; note: string } {
  */
 export function sanitizeAmountInput(raw: string): string {
   return raw.replace(/[^0-9.,]/g, '');
+}
+
+/**
+ * The envelope cash box, which may go below zero: some nights the till
+ * pays out more than it took, and the shortfall is made up at the next
+ * close-out. One leading minus is kept; anything else is cleaned as in
+ * sanitizeAmountInput.
+ */
+export function sanitizeSignedAmountInput(raw: string): string {
+  const negative = raw.trim().startsWith('-');
+  const rest = sanitizeAmountInput(raw);
+  return negative ? `-${rest}` : rest;
+}
+
+/** The ± button: the iPhone decimal keypad has no minus key. */
+export function flipSign(raw: string): string {
+  const t = raw.trim();
+  return t.startsWith('-') ? t.slice(1) : `-${t}`;
+}
+
+
+/**
+ * What a money box shows for what was typed: an auto-decimal figure is
+ * shown with its comma as it is typed (1946 shows 19,46), so the manager
+ * sees the amount the sheet will use. Everything else is shown as typed.
+ */
+export function amountDisplay(raw: string): string {
+  if (!isAutoDecimal(raw)) return raw;
+  return formatCents(parseCents(raw));
+}
+
+/**
+ * Turn an edit of the shown text back into what was typed.
+ *
+ * While the box shows an auto-decimal figure, its comma and dots were put
+ * there by amountDisplay, not typed, so they are taken out again: 19,46
+ * with a 5 typed after it is "19,465" → 19465 → shows 194,65.
+ * A comma or dot typed at the END is the manager's own, and switches the
+ * box back to as-typed: 19,46 then "," is 1946, — €1.946 and counting.
+ */
+export function rawFromEdit(prevRaw: string, shown: string): string {
+  if (!isAutoDecimal(prevRaw)) return shown;
+  const sign = shown.trim().startsWith('-') ? '-' : '';
+  const digits = shown.replace(/[^0-9]/g, '');
+  const seps = (t: string) => (t.match(/[.,]/g) ?? []).length;
+  const last = shown.trim().slice(-1);
+  if ((last === ',' || last === '.') && seps(shown) > seps(amountDisplay(prevRaw))) {
+    return `${sign}${digits}${last}`;
+  }
+  return `${sign}${digits}`;
 }
