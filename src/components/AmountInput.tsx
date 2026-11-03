@@ -11,10 +11,9 @@ type Props = Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChan
 };
 
 /**
- * A money box. It shows an auto-decimal figure with its comma as it is
- * typed (1946 shows 19,46 — see AUTO_DECIMAL in lib/money.ts) but keeps
- * and hands back what was typed, so the draft, the server and the live
- * totals all read the same text through the same parseCents.
+ * A money box. It shows and hands back exactly what was typed, so the
+ * draft, the server and the live totals all read the same text through
+ * the same parseCents.
  */
 export function AmountInput({ value, onValue, inputMode = 'decimal', ...rest }: Props) {
   return (
