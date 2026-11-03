@@ -32,6 +32,7 @@ import Link from 'next/link';
 import { rowLabelFor, type ShiftsForm as ShiftsFormConfig } from '../lib/forms';
 import { formatCents, parseCents, sanitizeAmountInput, sanitizeSignedAmountInput } from '../lib/money';
 import { AmountInput } from './AmountInput';
+import { useT } from './LangProvider';
 import { computeShift, type ShiftTotals } from '../lib/compute';
 import { columnToShiftEntry } from './shiftsEntry';
 import { MAX_CUSTOM_LABEL, MAX_CUSTOM_LINES } from '../lib/customLine';
@@ -254,6 +255,9 @@ export default function ShiftsFormSheet({
   correction?: ShiftsCorrectionContext;
 }) {
   const uid = useId();
+  // Every word on this sheet goes through t() — see src/lib/i18n.
+  const t = useT();
+  const shiftLabels = useMemo(() => baseForm.shifts.map((s) => t(s)), [baseForm.shifts, t]);
 
   const seed = correction?.initial;
   // An approved night being corrected (revision, reason) — as opposed to an
@@ -856,36 +860,40 @@ function customLinesFrom(seed: ShiftsDraftFields | null, form: ShiftsFormConfig)
       {correction && correction.nextRevisionNo !== null && (
         <div className={styles.correctionBanner}>
           <p className={styles.correctionTitle}>
-            Διόρθωση κλεισίματος {correction.businessDate}
+            {t('Διόρθωση κλεισίματος {date}', { date: correction.businessDate })}
           </p>
           <p>
-            Θα γίνει αναθεώρηση {correction.nextRevisionNo}. Το προηγούμενο κλείσιμο
-            κρατιέται όπως είναι — δεν σβήνεται.
+            {t(
+              'Θα γίνει αναθεώρηση {n}. Το προηγούμενο κλείσιμο κρατιέται όπως είναι — δεν σβήνεται.',
+              { n: correction.nextRevisionNo }
+            )}
           </p>
         </div>
       )}
       {correction && correction.nextRevisionNo === null && (
         <div className={styles.correctionBanner}>
           <p className={styles.correctionTitle}>
-            Επεξεργασία κλεισίματος {correction.businessDate}
+            {t('Επεξεργασία κλεισίματος {date}', { date: correction.businessDate })}
           </p>
-          <p>Δεν έχει εγκριθεί ακόμα, οπότε η αποθήκευση γράφει πάνω του.</p>
+          <p>{t('Δεν έχει εγκριθεί ακόμα, οπότε η αποθήκευση γράφει πάνω του.')}</p>
         </div>
       )}
 
       <Link href="/" className={styles.backLink} onClick={handleBackClick}>
-        ← Εστιατόρια
+        ← {t('Εστιατόρια')}
       </Link>
 
       {draftChoice && (
         <div role="alert" className={styles.draftChoice}>
           <p>
-            Υπάρχει ημιτελές έντυπο από {draftChoice.businessDate || 'άλλη ημερομηνία'}.
+            {t('Υπάρχει ημιτελές έντυπο από {date}.', {
+              date: draftChoice.businessDate || t('άλλη ημερομηνία'),
+            })}
           </p>
-          <p className={styles.draftChoiceWarning}>{MSG_DRAFT_NO_PHOTOS}</p>
+          <p className={styles.draftChoiceWarning}>{t(MSG_DRAFT_NO_PHOTOS)}</p>
           <div className={styles.draftChoiceButtons}>
             <button type="button" onClick={() => applyDraft(draftChoice)}>
-              Συνέχεια σε εκείνο
+              {t('Συνέχεια σε εκείνο')}
             </button>
             <button
               type="button"
@@ -894,7 +902,7 @@ function customLinesFrom(seed: ShiftsDraftFields | null, form: ShiftsFormConfig)
                 setDraftChoice(null);
               }}
             >
-              Νέο έντυπο
+              {t('Νέο έντυπο')}
             </button>
           </div>
         </div>
@@ -909,14 +917,14 @@ function customLinesFrom(seed: ShiftsDraftFields | null, form: ShiftsFormConfig)
       >
         <header className={styles.letterhead}>
           <h1 className={styles.legalName}>{form.legalName}</h1>
-          {form.tagline && <p className={styles.tagline}>{form.tagline}</p>}
+          {form.tagline && <p className={styles.tagline}>{t(form.tagline)}</p>}
           <p className={styles.contact}>
             {form.address} · {form.phone}
           </p>
         </header>
 
         <div className={styles.topFields}>
-          <label htmlFor={`${uid}-date`}>Ημερομηνία</label>
+          <label htmlFor={`${uid}-date`}>{t('Ημερομηνία')}</label>
           <input
             id={`${uid}-date`}
             type="date"
@@ -935,13 +943,13 @@ function customLinesFrom(seed: ShiftsDraftFields | null, form: ShiftsFormConfig)
         >
           {form.tameioRows.map((row, ri) => (
             <div key={row.key} className={styles.gridRow}>
-              <span className={styles.rowLabel}>{ri === 0 ? 'ΤΑΜΕΙΟ' : ''}</span>
+              <span className={styles.rowLabel}>{ri === 0 ? t('ΤΑΜΕΙΟ') : ''}</span>
               {form.shifts.map((_, i) => (
                 <label key={i} className={styles.cell}>
                   {/* The printed sheet repeats "Dine in: / T/A: / Total:"
                       inside every column instead of naming them once on
                       the left, so this does too. */}
-                  <span className={styles.cellLabel}>{row.label}</span>
+                  <span className={styles.cellLabel}>{t(row.label)}</span>
                   {/* Dine in and T/A take words as well as figures — on
                       the paper they are as often a note as a number. Total
                       does not: it is what the night reconciles against, so
@@ -950,8 +958,8 @@ function customLinesFrom(seed: ShiftsDraftFields | null, form: ShiftsFormConfig)
                   <AmountInput
                     className={styles.cellAmount}
                     inputMode={row.key === 'total' ? 'decimal' : 'text'}
-                    placeholder={MSG_HINT_Z_REPORT}
-                    aria-label={`${shiftHeading(form.shifts, i)} — ${row.label}`}
+                    placeholder={t(MSG_HINT_Z_REPORT)}
+                    aria-label={`${shiftHeading(shiftLabels, i)} — ${t(row.label)}`}
                     value={columns[i]![row.key]}
                     onValue={(v) =>
                       updateColumn(i, {
@@ -970,7 +978,7 @@ function customLinesFrom(seed: ShiftsDraftFields | null, form: ShiftsFormConfig)
             <span className={styles.rowLabel} />
             {form.shifts.map((_, i) => (
               <span key={i} className={styles.colHeading}>
-                {shiftHeading(form.shifts, i)}
+                {shiftHeading(shiftLabels, i)}
               </span>
             ))}
           </div>
@@ -991,7 +999,7 @@ function customLinesFrom(seed: ShiftsDraftFields | null, form: ShiftsFormConfig)
             {m.countsAs && shown[idx - 1]?.countsAs !== m.countsAs && (
               <div className={`${styles.gridRow} ${styles.gridMachineTotalRow}`}>
                 <span className={`${styles.rowLabel} ${styles.visaOnly}`} data-visa="VISA">
-                  {form.methods.find((x) => x.key === m.countsAs)?.label ?? m.countsAs}
+                  {t(form.methods.find((x) => x.key === m.countsAs)?.label ?? m.countsAs)}
                 </span>
                 {form.shifts.map((_, i) => (
                   <span key={i} className={styles.cellTotal}>
@@ -1020,13 +1028,13 @@ function customLinesFrom(seed: ShiftsDraftFields | null, form: ShiftsFormConfig)
                   .join(' ')}
                 data-visa={m.visaBracket ? 'VISA' : undefined}
               >
-                {m.label || ' '}
+                {m.label ? t(m.label) : ' '}
                 {m.countsAs && (
                   <button
                     type="button"
                     className={styles.bracketRemove}
                     onClick={() => removeBracket(Number(m.label))}
-                    aria-label={`Αφαίρεση ${form.methods.find((x) => x.key === m.countsAs)?.label ?? ''} ${m.label}`}
+                    aria-label={`${t('Αφαίρεση')} ${t(form.methods.find((x) => x.key === m.countsAs)?.label ?? '')} ${m.label}`}
                   >
                     ×
                   </button>
@@ -1040,9 +1048,9 @@ function customLinesFrom(seed: ShiftsDraftFields | null, form: ShiftsFormConfig)
                   // typed: the iPhone decimal keypad has none, the text
                   // keyboard's 123 page does.
                   inputMode={m.isCash ? 'text' : 'decimal'}
-                  placeholder={m.isCash ? MSG_HINT_ENVELOPE : undefined}
-                  aria-label={`${shiftHeading(form.shifts, i)} — ${
-                    m.countsAs ? rowLabelFor(form, m.key) : m.label || 'Άλλο'
+                  placeholder={m.isCash ? t(MSG_HINT_ENVELOPE) : undefined}
+                  aria-label={`${shiftHeading(shiftLabels, i)} — ${
+                    m.countsAs ? rowLabelFor(form, m.key, null, t) : m.label ? t(m.label) : t('Άλλο')
                   }`}
                   value={columns[i]!.methods[m.key] ?? ''}
                   onValue={(v) => setMethod(i, m.key, v)}
@@ -1062,7 +1070,7 @@ function customLinesFrom(seed: ShiftsDraftFields | null, form: ShiftsFormConfig)
                       type="button"
                       className={styles.bracketAdd}
                       onClick={addCardBracket}
-                      aria-label="Προσθήκη μηχανήματος καρτών"
+                      aria-label={t('Προσθήκη μηχανήματος καρτών')}
                     >
                       +
                     </button>
@@ -1085,16 +1093,16 @@ function customLinesFrom(seed: ShiftsDraftFields | null, form: ShiftsFormConfig)
                   className={styles.rowLabelInput}
                   value={line.label}
                   maxLength={MAX_CUSTOM_LABEL}
-                  placeholder="+ όνομα"
-                  aria-label={`Όνομα γραμμής ${li + 1}`}
+                  placeholder={t('+ όνομα')}
+                  aria-label={`${t('Όνομα γραμμής')} ${li + 1}`}
                   onChange={(e) => setCustomLabel(li, e.target.value)}
                 />
                 {form.shifts.map((_, i) => (
                   <AmountInput
                     key={i}
                     className={styles.cellAmount}
-                    aria-label={`${shiftHeading(form.shifts, i)} — ${
-                      line.label.trim() || `γραμμή ${li + 1}`
+                    aria-label={`${shiftHeading(shiftLabels, i)} — ${
+                      line.label.trim() || `${t('γραμμή')} ${li + 1}`
                     }`}
                     value={line.amounts[i] ?? ''}
                     onValue={(v) => setCustomAmount(li, i, v)}
@@ -1113,7 +1121,7 @@ function customLinesFrom(seed: ShiftsDraftFields | null, form: ShiftsFormConfig)
             ))}
           </div>
           <div className={`${styles.gridRow} ${styles.gridComputedRow}`}>
-            <span className={styles.rowLabel}>Αναμενόμενα</span>
+            <span className={styles.rowLabel}>{t('Αναμενόμενα')}</span>
             {form.shifts.map((_, i) => (
               <span key={i} className={styles.cellTotal}>
                 {formatCents(totals[i]!.expectedCents)}
@@ -1121,7 +1129,7 @@ function customLinesFrom(seed: ShiftsDraftFields | null, form: ShiftsFormConfig)
             ))}
           </div>
           <div className={`${styles.gridRow} ${styles.gridComputedRow}`}>
-            <span className={styles.rowLabel}>Διαφορά</span>
+            <span className={styles.rowLabel}>{t('Διαφορά')}</span>
             {form.shifts.map((_, i) => (
               <span
                 key={i}
@@ -1134,17 +1142,17 @@ function customLinesFrom(seed: ShiftsDraftFields | null, form: ShiftsFormConfig)
           </div>
         </div>
 
-        {totals.some((t) => t.splitMismatch) && (
+        {totals.some((s) => s.splitMismatch) && (
           <p className={styles.hint}>
-            Dine in + T/A δεν βγάζουν το Total. Δεν εμποδίζει την αποθήκευση.
+            {t('Dine in + T/A δεν βγάζουν το Total. Δεν εμποδίζει την αποθήκευση.')}
           </p>
         )}
 
         {/* ONE block for the night, as the paper has it: the receipts are
             written once across the columns and braced to a single figure,
             and nothing on the sheet says which till paid which one. */}
-        <section className={styles.invoiceSection} aria-label="ΤΙΜΟΛΟΓΙΑ">
-          <h3 className={styles.blockHeading}>ΤΙΜΟΛΟΓΙΑ</h3>
+        <section className={styles.invoiceSection} aria-label={t('ΤΙΜΟΛΟΓΙΑ')}>
+          <h3 className={styles.blockHeading}>{t('ΤΙΜΟΛΟΓΙΑ')}</h3>
                   {invoices.map((inv, j) => {
                     const photoKey = String(j);
                     return (
@@ -1157,7 +1165,7 @@ function customLinesFrom(seed: ShiftsDraftFields | null, form: ShiftsFormConfig)
                             cannot wrap, so at phone width it slid out of
                             step with the boxes and the labels collided. */}
                         <label className={styles.invoiceField}>
-                          <span className={styles.invoiceFieldLabel}>Προμηθευτής</span>
+                          <span className={styles.invoiceFieldLabel}>{t('Προμηθευτής')}</span>
                           <input
                             className={styles.invoiceSupplier}
                             value={inv.supplier}
@@ -1165,7 +1173,7 @@ function customLinesFrom(seed: ShiftsDraftFields | null, form: ShiftsFormConfig)
                           />
                         </label>
                         <label className={styles.invoiceField}>
-                          <span className={styles.invoiceFieldLabel}>{MSG_INVOICE_NO}</span>
+                          <span className={styles.invoiceFieldLabel}>{t(MSG_INVOICE_NO)}</span>
                           <input
                             className={styles.invoiceNumber}
                             value={inv.invoiceNumber}
@@ -1173,7 +1181,7 @@ function customLinesFrom(seed: ShiftsDraftFields | null, form: ShiftsFormConfig)
                           />
                         </label>
                         <label className={`${styles.invoiceField} ${styles.invoiceFieldAmount}`}>
-                          <span className={styles.invoiceFieldLabel}>Ποσό</span>
+                          <span className={styles.invoiceFieldLabel}>{t('Ποσό')}</span>
                           <AmountInput
                             className={styles.invoiceAmount}
                             value={inv.amount}
@@ -1181,14 +1189,14 @@ function customLinesFrom(seed: ShiftsDraftFields | null, form: ShiftsFormConfig)
                           />
                         </label>
                         <label className={styles.photoButton}>
-                          <span>📷 Φωτογραφία</span>
+                          <span>📷 {t('Φωτογραφία')}</span>
                           <input
                             ref={(el) => photos.registerInput(photoKey, el)}
                             type="file"
                             accept="image/*,application/pdf"
                             capture="environment"
                             className={styles.fileInput}
-                            aria-label={`Φωτογραφία τιμολογίου, γραμμή ${j + 1}`}
+                            aria-label={`${t('Φωτογραφία τιμολογίου, γραμμή')} ${j + 1}`}
                             onChange={(e) => photos.attach(photoKey, e.target.files?.[0] ?? null)}
                           />
                         </label>
@@ -1199,7 +1207,7 @@ function customLinesFrom(seed: ShiftsDraftFields | null, form: ShiftsFormConfig)
                                 vanishes the moment the scanner fills the
                                 field, leaving an unnamed value. */}
                             <label className={styles.receiptField}>
-                              <span className={styles.receiptFieldLabel}>{MSG_INVOICE_DATE}</span>
+                              <span className={styles.receiptFieldLabel}>{t(MSG_INVOICE_DATE)}</span>
                               {/* type="date": a picker on a phone,
                                   YYYY-MM-DD back whatever the locale
                                   shows, and min/max refuses the misread
@@ -1223,7 +1231,7 @@ function customLinesFrom(seed: ShiftsDraftFields | null, form: ShiftsFormConfig)
                               items={inv.items}
                               onChange={(next) => setInvoice(j, { items: next })}
                               lineAmount={inv.amount}
-                              rowLabel={`Τιμολόγιο ${j + 1}`}
+                              rowLabel={`${t('Τιμολόγιο')} ${j + 1}`}
                               fromScan={
                                 scanWrote.current[photoKey]?.items != null &&
                                 sameItems(scanWrote.current[photoKey].items, inv.items)
@@ -1258,30 +1266,30 @@ function customLinesFrom(seed: ShiftsDraftFields | null, form: ShiftsFormConfig)
                               title={photos.photos[photoKey].name}
                             >
                               {photos.photos[photoKey].status === 'uploading' &&
-                                MSG_PHOTO_UPLOADING}
-                              {photos.photos[photoKey].status === 'scanning' && MSG_PHOTO_SCANNING}
+                                t(MSG_PHOTO_UPLOADING)}
+                              {photos.photos[photoKey].status === 'scanning' && t(MSG_PHOTO_SCANNING)}
                               {photos.photos[photoKey].status === 'failed' &&
-                                (photos.photos[photoKey].message ?? MSG_PHOTO_FAILED)}
-                              {photos.photos[photoKey].status === 'uploaded' && MSG_PHOTO_ATTACHED}
+                                t(photos.photos[photoKey].message ?? MSG_PHOTO_FAILED)}
+                              {photos.photos[photoKey].status === 'uploaded' && t(MSG_PHOTO_ATTACHED)}
                               {photos.photos[photoKey].scanned && (
-                                <em className={styles.photoScanned}> {MSG_FROM_PHOTO}</em>
+                                <em className={styles.photoScanned}> {t(MSG_FROM_PHOTO)}</em>
                               )}
                             </span>
                             <button
                               type="button"
                               className={styles.photoRemove}
                               onClick={() => photos.remove(photoKey)}
-                              aria-label={`Αφαίρεση φωτογραφίας, γραμμή ${j + 1}`}
+                              aria-label={`${t('Αφαίρεση φωτογραφίας, γραμμή')} ${j + 1}`}
                             >
-                              Αφαίρεση
+                              {t('Αφαίρεση')}
                             </button>
                           </p>
                         )}
                         {photos.photos[photoKey]?.unread?.length ? (
                           <p className={styles.invoiceUnread} role="status">
-                            {MSG_PHOTO_UNREAD_PREFIX}{' '}
-                            {photos.photos[photoKey].unread?.join(', ')}{' '}
-                            {MSG_PHOTO_UNREAD_SUFFIX}
+                            {t(MSG_PHOTO_UNREAD_PREFIX)}{' '}
+                            {photos.photos[photoKey].unread?.map((f) => t(f)).join(', ')}{' '}
+                            {t(MSG_PHOTO_UNREAD_SUFFIX)}
                           </p>
                         ) : null}
                         {photos.photos[photoKey]?.needsCheck && (
@@ -1293,8 +1301,8 @@ function customLinesFrom(seed: ShiftsDraftFields | null, form: ShiftsFormConfig)
                               }
                             >
                               {photos.photos[photoKey].scanned === 'low'
-                                ? `⚠ ${MSG_PHOTO_LOW_CONFIDENCE}`
-                                : MSG_PHOTO_AMOUNT_CHECK}
+                                ? `⚠ ${t(MSG_PHOTO_LOW_CONFIDENCE)}`
+                                : t(MSG_PHOTO_AMOUNT_CHECK)}
                             </span>
                             {photos.photos[photoKey].checkHint && (
                               <span className={styles.invoiceCheckHint}>
@@ -1306,9 +1314,9 @@ function customLinesFrom(seed: ShiftsDraftFields | null, form: ShiftsFormConfig)
                                 type="checkbox"
                                 checked={photos.photos[photoKey].checked === true}
                                 onChange={() => photos.acknowledge(photoKey)}
-                                aria-label={`${MSG_PHOTO_CONFIRM_CHECKED}, γραμμή ${j + 1}`}
+                                aria-label={`${t(MSG_PHOTO_CONFIRM_CHECKED)}, ${t('γραμμή')} ${j + 1}`}
                               />
-                              {MSG_PHOTO_CONFIRM_CHECKED}
+                              {t(MSG_PHOTO_CONFIRM_CHECKED)}
                             </label>
                           </p>
                         )}
@@ -1317,7 +1325,7 @@ function customLinesFrom(seed: ShiftsDraftFields | null, form: ShiftsFormConfig)
                   })}
                   {invoicesSubtotal(invoices) > 0 && (
                     <div className={styles.invoiceSubtotal}>
-                      <span>Σύνολο τιμολογίων</span>
+                      <span>{t('Σύνολο τιμολογίων')}</span>
                       <span>{formatCents(invoicesSubtotal(invoices))}</span>
                     </div>
                   )}
@@ -1325,33 +1333,33 @@ function customLinesFrom(seed: ShiftsDraftFields | null, form: ShiftsFormConfig)
 
         <dl className={styles.dayTotals}>
           <div>
-            <dt>Ημέρα — αναμενόμενα</dt>
+            <dt>{t('Ημέρα — αναμενόμενα')}</dt>
             <dd>{formatCents(dayExpected)}</dd>
           </div>
           <div>
-            <dt>Ημέρα — σύνολο</dt>
+            <dt>{t('Ημέρα — σύνολο')}</dt>
             <dd>{formatCents(dayAccounted)}</dd>
           </div>
           <div className={dayDifference === 0 ? '' : styles.differenceRow}>
-            <dt>Ημέρα — διαφορά</dt>
+            <dt>{t('Ημέρα — διαφορά')}</dt>
             <dd>{formatCents(dayDifference)}</dd>
           </div>
         </dl>
 
         <div className={styles.footerFields}>
           <div className={styles.fieldRow}>
-            <label htmlFor={`${uid}-manager`}>Υπεύθυνος ταμείου</label>
+            <label htmlFor={`${uid}-manager`}>{t('Υπεύθυνος ταμείου')}</label>
             <input
               id={`${uid}-manager`}
               value={closingManagerName}
               onChange={(e) => setClosingManagerName(e.target.value)}
               autoComplete="name"
-              placeholder={MSG_MANAGER_NAME_PLACEHOLDER}
+              placeholder={t(MSG_MANAGER_NAME_PLACEHOLDER)}
             />
           </div>
           <SignaturePad
             id={`${uid}-signature`}
-            label="Υπογραφή"
+            label={t('Υπογραφή')}
             value={signature}
             onChange={setSignature}
           />
@@ -1359,10 +1367,10 @@ function customLinesFrom(seed: ShiftsDraftFields | null, form: ShiftsFormConfig)
 
         {attempted && missing.length > 0 && (
           <div role="alert" className={styles.alert}>
-            <p>{missingHeader(missing.length)}</p>
+            <p>{t(missingHeader(missing.length))}</p>
             <ul>
               {missing.map((m) => (
-                <li key={m}>{m}</li>
+                <li key={m}>{t(m)}</li>
               ))}
             </ul>
           </div>
@@ -1371,16 +1379,16 @@ function customLinesFrom(seed: ShiftsDraftFields | null, form: ShiftsFormConfig)
         {(result?.ok || serverMessages.length > 0) && (
           <div role="alert" className={styles.alert}>
             {result?.ok ? (
-              <p>Αποθηκεύτηκε.</p>
+              <p>{t('Αποθηκεύτηκε.')}</p>
             ) : (
-              serverMessages.map((m) => <p key={m}>{m}</p>)
+              serverMessages.map((m) => <p key={m}>{t(m)}</p>)
             )}
           </div>
         )}
 
         {isCorrection && (
           <div className={styles.correctionReason}>
-            <label htmlFor={`${uid}-reason`}>Γιατί διορθώνεται;</label>
+            <label htmlFor={`${uid}-reason`}>{t('Γιατί διορθώνεται;')}</label>
             <textarea
               id={`${uid}-reason`}
               rows={2}
@@ -1392,7 +1400,7 @@ function customLinesFrom(seed: ShiftsDraftFields | null, form: ShiftsFormConfig)
 
         <div className={styles.saveBar}>
           <button type="submit" disabled={saving}>
-            {saving ? 'Αποθήκευση…' : 'Αποθήκευση'}
+            {saving ? t('Αποθήκευση…') : t('Αποθήκευση')}
           </button>
         </div>
       </form>

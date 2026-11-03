@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react';
 import { approveAction, type ApproveState } from '../../actions';
+import { useT } from '../../../../components/LangProvider';
 import styles from '../../archive.module.css';
 
 const initial: ApproveState = { error: null, ok: false };
@@ -22,16 +23,17 @@ export default function ApproveButton({
   flagged: boolean;
 }) {
   const [state, action, pending] = useActionState(approveAction, initial);
+  const t = useT();
 
   return (
     <form action={action} className={styles.approveForm}>
       <input type="hidden" name="restaurantId" value={restaurantId} />
       <input type="hidden" name="businessDate" value={businessDate} />
       {state.error && (
-        <p role="alert" className={styles.error}>{state.error}</p>
+        <p role="alert" className={styles.error}>{t(state.error)}</p>
       )}
       <button type="submit" disabled={pending}>
-        {pending ? 'Έγκριση…' : flagged ? 'Έγκριση παρά τη διαφορά' : 'Έγκριση'}
+        {pending ? t('Έγκριση…') : flagged ? t('Έγκριση παρά τη διαφορά') : t('Έγκριση')}
       </button>
     </form>
   );

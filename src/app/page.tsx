@@ -8,6 +8,7 @@ import { formatCents } from '../lib/money';
 import { describeFlag } from '../lib/flags';
 import AppNav from '../components/AppNav';
 import { logoutAction } from './login/actions';
+import { getT } from '../server/lang';
 import styles from './page.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -28,6 +29,7 @@ export default async function DashboardPage() {
   const session = await getCurrentSession();
   if (!session) redirect('/login');
 
+  const t = await getT();
   const [flagged, restaurants, admin] = await Promise.all([
     listFlagged(session.userId),
     // Only the restaurants this login belongs to. A restaurant login sees
@@ -42,10 +44,10 @@ export default async function DashboardPage() {
       <AppNav current="zet" isAdmin={admin} />
 
       <section className={styles.section}>
-        <h2 className={styles.sectionHeading}>Χρειάζονται έλεγχο</h2>
+        <h2 className={styles.sectionHeading}>{t('Χρειάζονται έλεγχο')}</h2>
 
         {flagged.length === 0 ? (
-          <p className={styles.allClear}>Όλα τα κλεισίματα συμφωνούν.</p>
+          <p className={styles.allClear}>{t('Όλα τα κλεισίματα συμφωνούν.')}</p>
         ) : (
           <>
             <ul className={styles.flagList}>
@@ -60,7 +62,7 @@ export default async function DashboardPage() {
                       {FORMS[r.restaurantId as keyof typeof FORMS]?.displayName ?? r.restaurantId}
                     </span>
                     <span className={styles.flagWhat}>
-                      {r.flags.map((f) => describeFlag(f, formatCents)).join(' · ')}
+                      {r.flags.map((f) => t(describeFlag(f, formatCents))).join(' · ')}
                     </span>
                   </Link>
                 </li>
@@ -68,7 +70,7 @@ export default async function DashboardPage() {
             </ul>
             {flagged.length > shown.length && (
               <Link href="/archive" className={styles.moreLink}>
-                και άλλα {flagged.length - shown.length} →
+                {t('και άλλα {n} →', { n: flagged.length - shown.length })}
               </Link>
             )}
           </>
@@ -76,7 +78,7 @@ export default async function DashboardPage() {
       </section>
 
       <section className={styles.section}>
-        <h2 className={styles.sectionHeading}>Νέο κλείσιμο</h2>
+        <h2 className={styles.sectionHeading}>{t('Νέο κλείσιμο')}</h2>
         <ul className={styles.list}>
           {restaurants.map((id) => (
             <li key={id}>
@@ -89,7 +91,7 @@ export default async function DashboardPage() {
       </section>
 
       <form action={logoutAction} className={styles.logout}>
-        <button type="submit">Αποσύνδεση</button>
+        <button type="submit">{t('Αποσύνδεση')}</button>
       </form>
     </main>
   );

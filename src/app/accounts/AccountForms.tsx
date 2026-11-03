@@ -6,6 +6,7 @@ import {
   resetPasswordAction,
   type AccountFormState,
 } from './actions';
+import { useT } from '../../components/LangProvider';
 import styles from './accounts.module.css';
 
 const initial: AccountFormState = { error: null, done: null };
@@ -17,15 +18,17 @@ const initial: AccountFormState = { error: null, done: null };
  */
 
 function Result({ state }: { state: AccountFormState }) {
-  if (state.error) return <p role="alert" className={styles.error}>{state.error}</p>;
-  if (state.done) return <p role="status" className={styles.done}>{state.done}</p>;
+  const t = useT();
+  if (state.error) return <p role="alert" className={styles.error}>{t(state.error)}</p>;
+  if (state.done) return <p role="status" className={styles.done}>{t(state.done)}</p>;
   return null;
 }
 
 function PasswordFields({ idPrefix, minLength }: { idPrefix: string; minLength: number }) {
+  const t = useT();
   return (
     <>
-      <label htmlFor={`${idPrefix}-password`}>Κωδικός</label>
+      <label htmlFor={`${idPrefix}-password`}>{t('Κωδικός')}</label>
       <input
         id={`${idPrefix}-password`}
         name="password"
@@ -34,7 +37,7 @@ function PasswordFields({ idPrefix, minLength }: { idPrefix: string; minLength: 
         minLength={minLength}
         required
       />
-      <label htmlFor={`${idPrefix}-confirm`}>Ξανά ο κωδικός</label>
+      <label htmlFor={`${idPrefix}-confirm`}>{t('Ξανά ο κωδικός')}</label>
       <input
         id={`${idPrefix}-confirm`}
         name="confirm"
@@ -55,12 +58,13 @@ export function CreateLoginForm({
   minLength: number;
 }) {
   const [state, action, pending] = useActionState(createLoginAction, initial);
+  const t = useT();
   const p = `new-${restaurantId}`;
 
   return (
     <form action={action} className={styles.form}>
       <input type="hidden" name="restaurantId" value={restaurantId} />
-      <label htmlFor={`${p}-username`}>Όνομα χρήστη</label>
+      <label htmlFor={`${p}-username`}>{t('Όνομα χρήστη')}</label>
       <input
         id={`${p}-username`}
         name="username"
@@ -71,7 +75,7 @@ export function CreateLoginForm({
         defaultValue={state.typed?.username}
         required
       />
-      <label htmlFor={`${p}-name`}>Όνομα λογαριασμού</label>
+      <label htmlFor={`${p}-name`}>{t('Όνομα λογαριασμού')}</label>
       <input
         id={`${p}-name`}
         name="name"
@@ -82,7 +86,7 @@ export function CreateLoginForm({
       <PasswordFields idPrefix={p} minLength={minLength} />
       <Result state={state} />
       <button type="submit" disabled={pending}>
-        {pending ? 'Δημιουργία…' : 'Δημιουργία λογαριασμού'}
+        {pending ? t('Δημιουργία…') : t('Δημιουργία λογαριασμού')}
       </button>
     </form>
   );
@@ -98,17 +102,18 @@ export function ResetPasswordForm({
   minLength: number;
 }) {
   const [state, action, pending] = useActionState(resetPasswordAction, initial);
+  const t = useT();
   const p = `reset-${username}`;
 
   return (
     <details className={styles.reset}>
-      <summary>Νέος κωδικός</summary>
+      <summary>{t('Νέος κωδικός')}</summary>
       <form action={action} className={styles.form}>
         <input type="hidden" name="userId" value={userId} />
         <PasswordFields idPrefix={p} minLength={minLength} />
         <Result state={state} />
         <button type="submit" disabled={pending}>
-          {pending ? 'Αποθήκευση…' : 'Ορισμός κωδικού'}
+          {pending ? t('Αποθήκευση…') : t('Ορισμός κωδικού')}
         </button>
       </form>
     </details>

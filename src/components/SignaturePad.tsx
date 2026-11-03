@@ -29,6 +29,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
+import { useT } from './LangProvider';
 import styles from './SignaturePad.module.css';
 
 /** Drawn signatures are stored as this; anything else is a typed name. */
@@ -52,6 +53,7 @@ export default function SignaturePad({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const drawingRef = useRef(false);
   const dirtyRef = useRef(false);
+  const t = useT();
   const [typing, setTyping] = useState(false);
 
   // A drawn value that did not come from this canvas — a restored draft, or
@@ -138,7 +140,7 @@ export default function SignaturePad({
             onChange('');
           }}
         >
-          {typing ? 'Υπογραφή με το δάχτυλο' : 'Πληκτρολόγηση αντί υπογραφής'}
+          {typing ? t('Υπογραφή με το δάχτυλο') : t('Πληκτρολόγηση αντί υπογραφής')}
         </button>
       </div>
 
@@ -156,7 +158,7 @@ export default function SignaturePad({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={value} alt={label} className={styles.saved} />
           <button type="button" className={styles.clear} onClick={clear}>
-            Ξανά
+            {t('Ξανά')}
           </button>
         </div>
       ) : (
@@ -172,9 +174,9 @@ export default function SignaturePad({
             onPointerCancel={end}
           />
           <div className={styles.footRow}>
-            <span className={styles.hint}>Υπογράψτε μέσα στο πλαίσιο</span>
+            <span className={styles.hint}>{t('Υπογράψτε μέσα στο πλαίσιο')}</span>
             <button type="button" className={styles.clear} onClick={clear}>
-              Καθαρισμός
+              {t('Καθαρισμός')}
             </button>
           </div>
         </>

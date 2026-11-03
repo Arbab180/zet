@@ -4,6 +4,7 @@ import { getCurrentSession } from '../../server/currentSession';
 import { listRestaurantSummaries } from '../../server/reports';
 import { isAdmin } from '../../server/accounts';
 import AppNav from '../../components/AppNav';
+import { getT } from '../../server/lang';
 import styles from './archive.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -19,16 +20,19 @@ export default async function ArchivePage() {
     isAdmin(session),
   ]);
   const totalFlagged = restaurants.reduce((a, r) => a + r.flaggedCount, 0);
+  const t = await getT();
 
   return (
     <main className={styles.page}>
       <AppNav current="archive" isAdmin={admin} />
 
-      <h1 className={styles.heading}>Αρχείο</h1>
+      <h1 className={styles.heading}>{t('Αρχείο')}</h1>
       <p className={styles.sub}>
         {totalFlagged === 0
-          ? 'Κανένα κλείσιμο δεν χρειάζεται έλεγχο.'
-          : `${totalFlagged} ${totalFlagged === 1 ? 'κλείσιμο χρειάζεται' : 'κλεισίματα χρειάζονται'} έλεγχο.`}
+          ? t('Κανένα κλείσιμο δεν χρειάζεται έλεγχο.')
+          : totalFlagged === 1
+            ? t('1 κλείσιμο χρειάζεται έλεγχο.')
+            : t('{n} κλεισίματα χρειάζονται έλεγχο.', { n: totalFlagged })}
       </p>
 
       <ul className={styles.list}>
@@ -38,11 +42,16 @@ export default async function ArchivePage() {
               <span className={styles.cardName}>{r.displayName}</span>
               <span className={styles.cardMeta}>
                 {r.reportCount === 0
-                  ? 'κανένα κλείσιμο ακόμα'
-                  : `${r.reportCount} ${r.reportCount === 1 ? 'κλείσιμο' : 'κλεισίματα'} · τελευταίο ${r.latestBusinessDate}`}
+                  ? t('κανένα κλείσιμο ακόμα')
+                  : r.reportCount === 1
+                    ? t('1 κλείσιμο · τελευταίο {date}', { date: r.latestBusinessDate ?? '' })
+                    : t('{n} κλεισίματα · τελευταίο {date}', {
+                        n: r.reportCount,
+                        date: r.latestBusinessDate ?? '',
+                      })}
               </span>
               {r.flaggedCount > 0 && (
-                <span className={styles.badge}>{r.flaggedCount} για έλεγχο</span>
+                <span className={styles.badge}>{t('{n} για έλεγχο', { n: r.flaggedCount })}</span>
               )}
             </Link>
           </li>

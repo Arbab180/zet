@@ -25,6 +25,7 @@ import {
   MSG_ITEM_QTY,
   MSG_ITEM_REMOVE,
 } from '../lib/messages';
+import { useT } from './LangProvider';
 import styles from './ReceiptItems.module.css';
 
 /**
@@ -59,11 +60,12 @@ export default function ReceiptItems({
   // look at, and one being typed is something being used. Held in state
   // because a bare `open` attribute would re-open it on every keystroke.
   const [open, setOpen] = useState(true);
+  const t = useT();
 
   if (items.length === 0) {
     return (
       <button type="button" className={styles.addFirst} onClick={() => onChange([blankItem()])}>
-        {MSG_ITEMS_ADD_FIRST}
+        {t(MSG_ITEMS_ADD_FIRST)}
       </button>
     );
   }
@@ -83,17 +85,17 @@ export default function ReceiptItems({
     >
       <summary className={styles.summary}>
         <span>
-          {MSG_ITEMS} · {MSG_ITEMS_COUNT(items.length)}
+          {t(MSG_ITEMS)} · {t(MSG_ITEMS_COUNT(items.length))}
         </span>
         <span className={styles.summaryTotal}>{formatCents(total)}</span>
       </summary>
 
-      {fromScan && <p className={styles.fromScan}>{MSG_ITEMS_FROM_PHOTO}</p>}
+      {fromScan && <p className={styles.fromScan}>{t(MSG_ITEMS_FROM_PHOTO)}</p>}
 
       <div className={styles.head} aria-hidden="true">
-        <span>{MSG_ITEM_NAME}</span>
-        <span>{MSG_ITEM_QTY}</span>
-        <span className={styles.headAmount}>{MSG_ITEM_AMOUNT}</span>
+        <span>{t(MSG_ITEM_NAME)}</span>
+        <span>{t(MSG_ITEM_QTY)}</span>
+        <span className={styles.headAmount}>{t(MSG_ITEM_AMOUNT)}</span>
         <span />
       </div>
 
@@ -104,26 +106,26 @@ export default function ReceiptItems({
             value={it.name}
             maxLength={MAX_ITEM_NAME}
             onChange={(ev) => setItem(i, { name: ev.target.value })}
-            aria-label={`${rowLabel} — ${MSG_ITEM_NAME} ${i + 1}`}
+            aria-label={`${rowLabel} — ${t(MSG_ITEM_NAME)} ${i + 1}`}
           />
           <input
             type="text"
             value={it.qty}
             maxLength={MAX_ITEM_QTY}
             onChange={(ev) => setItem(i, { qty: ev.target.value })}
-            aria-label={`${rowLabel} — ${MSG_ITEM_QTY} ${i + 1}`}
+            aria-label={`${rowLabel} — ${t(MSG_ITEM_QTY)} ${i + 1}`}
           />
           <AmountInput
             className={styles.amount}
             value={it.amount}
             onValue={(v) => setItem(i, { amount: sanitizeAmountInput(v) })}
-            aria-label={`${rowLabel} — ${MSG_ITEM_AMOUNT} ${i + 1}`}
+            aria-label={`${rowLabel} — ${t(MSG_ITEM_AMOUNT)} ${i + 1}`}
           />
           <button
             type="button"
             className={styles.remove}
             onClick={() => onChange(items.filter((_, j) => j !== i))}
-            aria-label={`${MSG_ITEM_REMOVE} ${i + 1} — ${rowLabel}`}
+            aria-label={`${t(MSG_ITEM_REMOVE)} ${i + 1} — ${rowLabel}`}
           >
             ×
           </button>
@@ -137,22 +139,24 @@ export default function ReceiptItems({
             className={styles.add}
             onClick={() => onChange([...items, blankItem()])}
           >
-            {MSG_ITEMS_ADD}
+            {t(MSG_ITEMS_ADD)}
           </button>
         ) : (
           <span />
         )}
         <span className={styles.footTotal}>
-          {MSG_ITEMS_TOTAL} {formatCents(total)}
+          {t(MSG_ITEMS_TOTAL)} {formatCents(total)}
         </span>
       </div>
 
       {difference && difference.differenceCents !== 0 && (
         <p className={styles.difference} role="status">
-          {MSG_ITEMS_DIFFERENCE(
-            formatCents(difference.itemsCents),
-            formatCents(difference.lineCents),
-            formatCents(Math.abs(difference.differenceCents))
+          {t(
+            MSG_ITEMS_DIFFERENCE(
+              formatCents(difference.itemsCents),
+              formatCents(difference.lineCents),
+              formatCents(Math.abs(difference.differenceCents))
+            )
           )}
         </p>
       )}

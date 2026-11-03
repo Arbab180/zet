@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { getT } from '../server/lang';
 import styles from './AppNav.module.css';
 
 /**
@@ -14,28 +15,29 @@ import styles from './AppNav.module.css';
  * The accounts tab is shown to the admin only. Hiding it is cosmetic: the
  * page answers "not found" to anyone else, and the database refuses them.
  */
-export default function AppNav({
+export default async function AppNav({
   current,
   isAdmin = false,
 }: {
   current: 'zet' | 'archive' | 'accounts';
   isAdmin?: boolean;
 }) {
+  const t = await getT();
   return (
-    <nav className={styles.nav} aria-label="Κύρια πλοήγηση">
+    <nav className={styles.nav} aria-label={t('Κύρια πλοήγηση')}>
       <Link
         href="/"
         className={current === 'zet' ? styles.tabActive : styles.tab}
         aria-current={current === 'zet' ? 'page' : undefined}
       >
-        Κλείσιμο ημέρας
+        {t('Κλείσιμο ημέρας')}
       </Link>
       <Link
         href="/archive"
         className={current === 'archive' ? styles.tabActive : styles.tab}
         aria-current={current === 'archive' ? 'page' : undefined}
       >
-        Αρχείο
+        {t('Αρχείο')}
       </Link>
       {isAdmin && (
         <Link
@@ -43,7 +45,7 @@ export default function AppNav({
           className={current === 'accounts' ? styles.tabActive : styles.tab}
           aria-current={current === 'accounts' ? 'page' : undefined}
         >
-          Λογαριασμοί
+          {t('Λογαριασμοί')}
         </Link>
       )}
     </nav>
