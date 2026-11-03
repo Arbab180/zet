@@ -1,0 +1,46 @@
+/* A thin strip above every page, the switch at its right. In normal flow
+   rather than fixed, so it can never sit on top of a box on the sheet. */
+.bar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0.5rem 0.75rem 0;
+}
+
+.switch {
+  display: inline-flex;
+  border: 1px solid var(--zet-rule-strong);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.option, .active {
+  min-width: 40px;
+  min-height: 32px;
+  padding: 0 0.6rem;
+  border: 0;
+  background: var(--zet-paper);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--zet-muted);
+  cursor: pointer;
+}
+
+.option + .active, .active + .option {
+  border-left: 1px solid var(--zet-rule-strong);
+}
+
+.active {
+  background: var(--zet-ink);
+  color: var(--zet-paper);
+}
+
+.option:focus-visible, .active:focus-visible {
+  outline: 2px solid var(--zet-focus);
+  outline-offset: -2px;
+}
+
+/* Fat fingers: the 40px rule from CLAUDE.md. */
+@media (max-width: 700px), (pointer: coarse) {
+  .option, .active { min-height: 40px; min-width: 44px; }
+}

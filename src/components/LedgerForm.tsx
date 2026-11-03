@@ -47,6 +47,7 @@ import Link from 'next/link';
 import type { LedgerForm as LedgerFormConfig } from '../lib/forms';
 import { formatCents, parseCents, sanitizeAmountInput, sanitizeSignedAmountInput } from '../lib/money';
 import { AmountInput } from './AmountInput';
+import { useT } from './LangProvider';
 import { MAX_CUSTOM_LABEL, MAX_CUSTOM_LINES, normaliseCustomLabel } from '../lib/customLine';
 import { computeLedger, linesAgree, slotsAgree } from '../lib/compute';
 import {
@@ -278,6 +279,8 @@ export default function LedgerFormSheet({
   correction?: CorrectionContext;
 }) {
   const uid = useId();
+  // Every word on this sheet goes through t() — see src/lib/i18n.
+  const t = useT();
 
   const seed = correction?.initial;
   // An approved night being corrected (revision, reason) — as opposed to an
@@ -326,7 +329,7 @@ export default function LedgerFormSheet({
         <div className={styles.slotsCell} />
         <div className={styles.labelCell} data-align={baseForm.labelAlign}>
           <button type="button" className={styles.addButton} onClick={addCardBracket}>
-            + μηχάνημα καρτών
+            {t('+ μηχάνημα καρτών')}
           </button>
         </div>
         <div className={styles.signCell} />
@@ -910,34 +913,37 @@ export default function LedgerFormSheet({
       {correction && correction.nextRevisionNo !== null && (
         <div className={styles.correctionBanner}>
           <p className={styles.correctionTitle}>
-            Διόρθωση κλεισίματος {correction.businessDate}
+            {t('Διόρθωση κλεισίματος {date}', { date: correction.businessDate })}
           </p>
           <p>
-            Θα γίνει αναθεώρηση {correction.nextRevisionNo}. Το προηγούμενο κλείσιμο
-            κρατιέται όπως είναι — δεν σβήνεται.
+            {t(
+              'Θα γίνει αναθεώρηση {n}. Το προηγούμενο κλείσιμο κρατιέται όπως είναι — δεν σβήνεται.',
+              { n: correction.nextRevisionNo }
+            )}
           </p>
         </div>
       )}
       {correction && correction.nextRevisionNo === null && (
         <div className={styles.correctionBanner}>
           <p className={styles.correctionTitle}>
-            Επεξεργασία κλεισίματος {correction.businessDate}
+            {t('Επεξεργασία κλεισίματος {date}', { date: correction.businessDate })}
           </p>
-          <p>Δεν έχει εγκριθεί ακόμα, οπότε η αποθήκευση γράφει πάνω του.</p>
+          <p>{t('Δεν έχει εγκριθεί ακόμα, οπότε η αποθήκευση γράφει πάνω του.')}</p>
         </div>
       )}
 
       <Link href="/" className={styles.backLink} onClick={handleBackClick}>
-        ← Εστιατόρια
+        ← {t('Εστιατόρια')}
       </Link>
 
       {draftChoice && (
-        <div className={styles.draftChoice} role="group" aria-label="Επαναφορά αποθηκευμένου φύλλου">
+        <div className={styles.draftChoice} role="group" aria-label={t('Επαναφορά αποθηκευμένου φύλλου')}>
           <p>
-            Βρέθηκε αποθηκευμένο φύλλο για {formatBusinessDateForDisplay(draftChoice.businessDate)}.
-            Θέλετε να το συνεχίσετε ή να ξεκινήσετε νέο;
+            {t('Βρέθηκε αποθηκευμένο φύλλο για {date}. Θέλετε να το συνεχίσετε ή να ξεκινήσετε νέο;', {
+              date: t(formatBusinessDateForDisplay(draftChoice.businessDate)),
+            })}
           </p>
-          <p className={styles.draftChoiceWarning}>{MSG_DRAFT_NO_PHOTOS}</p>
+          <p className={styles.draftChoiceWarning}>{t(MSG_DRAFT_NO_PHOTOS)}</p>
           <div className={styles.draftChoiceButtons}>
             <button
               type="button"
@@ -946,7 +952,7 @@ export default function LedgerFormSheet({
                 setDraftChoice(null);
               }}
             >
-              Συνέχιση — {formatBusinessDateForDisplay(draftChoice.businessDate)}
+              {t('Συνέχιση')} — {t(formatBusinessDateForDisplay(draftChoice.businessDate))}
             </button>
             <button
               type="button"
@@ -955,7 +961,7 @@ export default function LedgerFormSheet({
                 setDraftChoice(null);
               }}
             >
-              Νέο φύλλο
+              {t('Νέο φύλλο')}
             </button>
           </div>
         </div>
@@ -970,19 +976,19 @@ export default function LedgerFormSheet({
       >
         <header className={styles.letterhead}>
           <p className={styles.legalName}>{form.legalName}</p>
-          {form.tagline && <p className={styles.tagline}>{form.tagline}</p>}
+          {form.tagline && <p className={styles.tagline}>{t(form.tagline)}</p>}
           {form.branch && <p className={styles.branch}>{form.branch}</p>}
           <p className={styles.address}>{form.address}</p>
-          {form.phone && <p className={styles.phone}>τηλ {form.phone}</p>}
+          {form.phone && <p className={styles.phone}>{t('τηλ')} {form.phone}</p>}
           <p className={styles.formRef}>
             {form.formRef}
-            {form.pageNumber ? ` · σελ. ${form.pageNumber}` : ''}
+            {form.pageNumber ? ` · ${t('σελ.')} ${form.pageNumber}` : ''}
           </p>
         </header>
 
         <div className={styles.metaGrid}>
           <div className={styles.field}>
-            <label htmlFor={`${uid}-date`}>Ημερομηνία</label>
+            <label htmlFor={`${uid}-date`}>{t('Ημερομηνία')}</label>
             <input
               id={`${uid}-date`}
               type="date"
@@ -991,14 +997,14 @@ export default function LedgerFormSheet({
             />
           </div>
           <div className={styles.field}>
-            <label htmlFor={`${uid}-manager`}>Έκλεισε το ταμείο</label>
+            <label htmlFor={`${uid}-manager`}>{t('Έκλεισε το ταμείο')}</label>
             <input
               id={`${uid}-manager`}
               type="text"
               value={closingManagerName}
               onChange={(e) => setClosingManagerName(e.target.value)}
               autoComplete="name"
-              placeholder={MSG_MANAGER_NAME_PLACEHOLDER}
+              placeholder={t(MSG_MANAGER_NAME_PLACEHOLDER)}
             />
           </div>
         </div>
@@ -1035,7 +1041,7 @@ export default function LedgerFormSheet({
                 <div className={styles.rowGroup} key={row.key}>
                   <div className={styles.slotsCell} />
                   <div className={styles.labelCell} data-align={form.labelAlign}>
-                    <span className={styles.labelText}>{row.label}</span>
+                    <span className={styles.labelText}>{t(row.label)}</span>
                   </div>
                   <div className={styles.signCell}>=</div>
                   <div className={styles.amountCell}>
@@ -1057,7 +1063,7 @@ export default function LedgerFormSheet({
                   <div className={styles.rowGroup}>
                     <div className={styles.slotsCell} />
                     <div className={styles.labelCell} data-align={form.labelAlign}>
-                      <span className={styles.labelText}>{row.label}</span>
+                      <span className={styles.labelText}>{t(row.label)}</span>
                     </div>
                     <div className={styles.signCell}>{row.sign ?? ''}</div>
                     <div className={styles.amountCell}>
@@ -1079,12 +1085,12 @@ export default function LedgerFormSheet({
                             type="button"
                             className={styles.bracketRemove}
                             onClick={() => removeBracket(ci + 1)}
-                            aria-label={`Αφαίρεση ${row.label} ${child.label}`}
+                            aria-label={`${t('Αφαίρεση')} ${t(row.label)} ${t(child.label)}`}
                           >
                             ×
                           </button>
                         )}
-                        <span className={styles.labelText}>{child.label}</span>
+                        <span className={styles.labelText}>{t(child.label)}</span>
                       </div>
                       <div className={styles.signCell} />
                       <div className={styles.amountCell}>
@@ -1092,7 +1098,7 @@ export default function LedgerFormSheet({
                           className={styles.amountInput}
                           value={values[child.key] ?? ''}
                           onValue={(v) => setValue(child.key, v)}
-                          aria-label={`${row.label} — ${child.label}`}
+                          aria-label={`${t(row.label)} — ${t(child.label)}`}
                         />
                       </div>
                     </div>
@@ -1128,12 +1134,12 @@ export default function LedgerFormSheet({
                   {row.slots
                     ? Array.from({ length: row.slots }, (_, i) => (
                         <span key={i} className={styles.slotGroup}>
-                          <span className={styles.slotLetter}>{GREEK_ORDER_LETTERS[i]})</span>
+                          <span className={styles.slotLetter}>{t(GREEK_ORDER_LETTERS[i]!)})</span>
                           <AmountInput
                             className={styles.slotInput}
                             value={rowSlots[i] ?? ''}
                             onValue={(v) => setSlot(row.key, i, v)}
-                            aria-label={`${row.label || 'γραμμή'} — παραγγελία ${GREEK_ORDER_LETTERS[i]}`}
+                            aria-label={`${row.label ? t(row.label) : t('γραμμή')} — ${t('παραγγελία')} ${t(GREEK_ORDER_LETTERS[i]!)}`}
                           />
                         </span>
                       ))
@@ -1151,11 +1157,11 @@ export default function LedgerFormSheet({
                       type="text"
                       value={labels[row.key] ?? ''}
                       onChange={(e) => setLabel(row.key, e.target.value)}
-                      placeholder="+ όνομα"
-                      aria-label="Ονομασία γραμμής"
+                      placeholder={t('+ όνομα')}
+                      aria-label={t('Ονομασία γραμμής')}
                     />
                   ) : (
-                    <span className={styles.labelText}>{row.label}</span>
+                    <span className={styles.labelText}>{t(row.label)}</span>
                   )}
                   {row.prefix && <span className={styles.labelPrefix}>{row.prefix}</span>}
                 </div>
@@ -1173,22 +1179,22 @@ export default function LedgerFormSheet({
                     // locked box would leave the person looking at a
                     // mismatch warning with no way to answer it.
                     data-derived={rowHasBreakdown ? '' : undefined}
-                    placeholder={row.source === 'z_report' ? MSG_HINT_Z_REPORT : undefined}
-                    aria-label={row.editableLabel ? 'Ποσό γραμμής' : row.label}
+                    placeholder={row.source === 'z_report' ? t(MSG_HINT_Z_REPORT) : undefined}
+                    aria-label={row.editableLabel ? t('Ποσό γραμμής') : t(row.label)}
                   />
                 </div>
 
                 {row.slots && !slotsOk && (
                   <div className={styles.detailCell}>
                     <p className={styles.mismatchHint}>
-                      Τα επιμέρους ποσά δεν αθροίζουν στο ποσό της γραμμής.
+                      {t('Τα επιμέρους ποσά δεν αθροίζουν στο ποσό της γραμμής.')}
                     </p>
                   </div>
                 )}
 
                 {row.note && (
                   <div className={styles.detailCell}>
-                    <p className={styles.note}>{row.note}</p>
+                    <p className={styles.note}>{t(row.note)}</p>
                   </div>
                 )}
 
@@ -1217,8 +1223,8 @@ export default function LedgerFormSheet({
                         type="text"
                         value={line.label}
                         maxLength={MAX_CUSTOM_LABEL}
-                        placeholder="+ όνομα"
-                        aria-label={`Ονομασία γραμμής ${li + 1}`}
+                        placeholder={t('+ όνομα')}
+                        aria-label={`${t('Ονομασία γραμμής')} ${li + 1}`}
                         onChange={(e) => setCustomLabel(li, e.target.value)}
                       />
                     </div>
@@ -1227,7 +1233,7 @@ export default function LedgerFormSheet({
                       <AmountInput
                         className={styles.amountInput}
                         value={line.amount}
-                        aria-label={line.label.trim() || `Ποσό γραμμής ${li + 1}`}
+                        aria-label={line.label.trim() || `${t('Ποσό γραμμής')} ${li + 1}`}
                         onValue={(v) => setCustomAmount(li, v)}
                       />
                     </div>
@@ -1239,11 +1245,11 @@ export default function LedgerFormSheet({
         </div>
 
         <section className={styles.expensesSection}>
-          <p className={styles.expensesHeading}>{form.expensesHeading}</p>
+          <p className={styles.expensesHeading}>{t(form.expensesHeading)}</p>
           <div className={styles.expenseColumnHeads}>
-            <span>{form.expenseColumns[0]}</span>
-            <span>{form.expenseColumns[1]}</span>
-            <span>Φωτο</span>
+            <span>{t(form.expenseColumns[0])}</span>
+            <span>{t(form.expenseColumns[1])}</span>
+            <span>{t('Φωτο')}</span>
           </div>
           <div className={styles.expenseGrid}>
             {expenses.map((e, i) => {
@@ -1261,14 +1267,14 @@ export default function LedgerFormSheet({
                     type="text"
                     value={e.description}
                     onChange={(ev) => setExpenseField(i, 'description', ev.target.value)}
-                    aria-label={`Έξοδο ${i + 1} — περιγραφή`}
+                    aria-label={`${t('Έξοδο')} ${i + 1} — ${t('περιγραφή')}`}
                   />
                 </div>
                 <div className={styles.expenseAmount}>
                   <AmountInput
                     value={e.amount}
                     onValue={(v) => setExpenseField(i, 'amount', v)}
-                    aria-label={`Έξοδο ${i + 1} — ποσό`}
+                    aria-label={`${t('Έξοδο')} ${i + 1} — ${t('ποσό')}`}
                   />
                 </div>
                 <div className={styles.expensePhoto}>
@@ -1285,7 +1291,7 @@ export default function LedgerFormSheet({
                       capture="environment"
                       className={styles.photoInput}
                       onChange={(ev) => photos.attach(slot, ev.target.files?.[0] ?? null)}
-                      aria-label={`Φωτογραφία απόδειξης — Έξοδο ${i + 1}`}
+                      aria-label={`${t('Φωτογραφία απόδειξης')} — ${t('Έξοδο')} ${i + 1}`}
                     />
                     <span aria-hidden="true">📎</span>
                   </label>
@@ -1311,16 +1317,16 @@ export default function LedgerFormSheet({
                         />
                       )}
                       <span className={styles.photoNote} title={photo.name}>
-                        {photo.status === 'uploading' && MSG_PHOTO_UPLOADING}
-                        {photo.status === 'scanning' && MSG_PHOTO_SCANNING}
-                        {photo.status === 'failed' && (photo.message ?? MSG_PHOTO_FAILED)}
-                        {photo.status === 'uploaded' && MSG_PHOTO_ATTACHED}
-                        {photo.scanned && <em className={styles.photoScanned}> {MSG_FROM_PHOTO}</em>}
+                        {photo.status === 'uploading' && t(MSG_PHOTO_UPLOADING)}
+                        {photo.status === 'scanning' && t(MSG_PHOTO_SCANNING)}
+                        {photo.status === 'failed' && t(photo.message ?? MSG_PHOTO_FAILED)}
+                        {photo.status === 'uploaded' && t(MSG_PHOTO_ATTACHED)}
+                        {photo.scanned && <em className={styles.photoScanned}> {t(MSG_FROM_PHOTO)}</em>}
                       </span>
                       <button
                         type="button"
                         onClick={() => photos.remove(slot)}
-                        aria-label={`Αφαίρεση φωτογραφίας — Έξοδο ${i + 1}`}
+                        aria-label={`${t('Αφαίρεση φωτογραφίας')} — ${t('Έξοδο')} ${i + 1}`}
                       >
                         ×
                       </button>
@@ -1335,7 +1341,7 @@ export default function LedgerFormSheet({
                         completed row showed two unnamed values and the
                         field looked as though it were not there at all. */}
                     <label className={styles.receiptField}>
-                      <span className={styles.receiptFieldLabel}>{MSG_INVOICE_NO}</span>
+                      <span className={styles.receiptFieldLabel}>{t(MSG_INVOICE_NO)}</span>
                       <input
                         type="text"
                         value={e.invoiceNumber}
@@ -1350,7 +1356,7 @@ export default function LedgerFormSheet({
                         nothing that reaches the database is trusted to the
                         client — but this catches it where it can be fixed. */}
                     <label className={styles.receiptField}>
-                      <span className={styles.receiptFieldLabel}>{MSG_INVOICE_DATE}</span>
+                      <span className={styles.receiptFieldLabel}>{t(MSG_INVOICE_DATE)}</span>
                       <input
                         type="date"
                         min="2000-01-01"
@@ -1371,7 +1377,7 @@ export default function LedgerFormSheet({
                       items={e.items}
                       onChange={(next) => setExpenseItems(i, next)}
                       lineAmount={e.amount}
-                      rowLabel={`Έξοδο ${i + 1}`}
+                      rowLabel={`${t('Έξοδο')} ${i + 1}`}
                       fromScan={itemsFromScan != null && sameItems(itemsFromScan, e.items)}
                     />
                   </div>
@@ -1379,8 +1385,8 @@ export default function LedgerFormSheet({
 
                 {photo?.unread && photo.unread.length > 0 && (
                   <div className={styles.receiptUnread} role="status">
-                    {MSG_PHOTO_UNREAD_PREFIX} {photo.unread.join(', ')}{' '}
-                    {MSG_PHOTO_UNREAD_SUFFIX}
+                    {t(MSG_PHOTO_UNREAD_PREFIX)} {photo.unread.map((f) => t(f)).join(', ')}{' '}
+                    {t(MSG_PHOTO_UNREAD_SUFFIX)}
                   </div>
                 )}
 
@@ -1396,8 +1402,8 @@ export default function LedgerFormSheet({
                       data-unsure={photo.scanned === 'low' ? '' : undefined}
                     >
                       {photo.scanned === 'low'
-                        ? `⚠ ${MSG_PHOTO_LOW_CONFIDENCE}`
-                        : MSG_PHOTO_AMOUNT_CHECK}
+                        ? `⚠ ${t(MSG_PHOTO_LOW_CONFIDENCE)}`
+                        : t(MSG_PHOTO_AMOUNT_CHECK)}
                     </span>
                     {photo.checkHint && (
                       <span className={styles.receiptCheckHint}>{photo.checkHint}</span>
@@ -1407,9 +1413,9 @@ export default function LedgerFormSheet({
                         type="checkbox"
                         checked={photo.checked === true}
                         onChange={() => photos.acknowledge(slot)}
-                        aria-label={`${MSG_PHOTO_CONFIRM_CHECKED} — Έξοδο ${i + 1}`}
+                        aria-label={`${t(MSG_PHOTO_CONFIRM_CHECKED)} — ${t('Έξοδο')} ${i + 1}`}
                       />
-                      {MSG_PHOTO_CONFIRM_CHECKED}
+                      {t(MSG_PHOTO_CONFIRM_CHECKED)}
                     </label>
                   </div>
                 )}
@@ -1418,19 +1424,19 @@ export default function LedgerFormSheet({
             })}
           </div>
           <div className={styles.expenseTotalRow}>
-            <span>Σύνολο εξόδων</span>
+            <span>{t('Σύνολο εξόδων')}</span>
             <span>{formatCents(totals.expensesCents)}</span>
           </div>
         </section>
 
         <section className={styles.cashSection}>
           <div className={styles.cashRow}>
-            <span className={styles.cashLabel}>Αναμενόμενα (υπολογισμός)</span>
+            <span className={styles.cashLabel}>{t('Αναμενόμενα (υπολογισμός)')}</span>
             <span className={styles.cashReadOnly}>{formatCents(totals.expectedCents)}</span>
           </div>
           <div className={styles.cashRow}>
             <label className={styles.cashLabel} htmlFor={`${uid}-counted`}>
-              {form.cashLabel}
+              {t(form.cashLabel)}
             </label>
             {/* The envelope may go below zero; the shortfall is made up at
                 the next close-out (30/10/2026). The minus is typed: the
@@ -1440,13 +1446,13 @@ export default function LedgerFormSheet({
               id={`${uid}-counted`}
               className={styles.cashInput}
               inputMode="text"
-              placeholder={MSG_HINT_ENVELOPE}
+              placeholder={t(MSG_HINT_ENVELOPE)}
               value={counted}
               onValue={(v) => setCounted(sanitizeSignedAmountInput(v))}
             />
           </div>
           <div className={styles.cashRow}>
-            <span className={styles.cashLabel}>Διαφορά</span>
+            <span className={styles.cashLabel}>{t('Διαφορά')}</span>
             <span className={totals.varianceCents === 0 ? styles.varianceZero : styles.varianceNonZero}>
               {formatCents(totals.varianceCents)}
             </span>
@@ -1456,7 +1462,7 @@ export default function LedgerFormSheet({
         <div className={styles.field}>
           <SignaturePad
             id={`${uid}-signature`}
-            label="Υπογραφή"
+            label={t('Υπογραφή')}
             value={signature}
             onChange={setSignature}
           />
@@ -1464,10 +1470,10 @@ export default function LedgerFormSheet({
 
         {hasAttemptedSave && localMissing.length > 0 && (
           <div role="alert" className={styles.alert}>
-            <p>{missingHeader(localMissing.length)}</p>
+            <p>{t(missingHeader(localMissing.length))}</p>
             <ul>
               {localMissing.map((m) => (
-                <li key={m}>{m}</li>
+                <li key={m}>{t(m)}</li>
               ))}
             </ul>
           </div>
@@ -1477,7 +1483,7 @@ export default function LedgerFormSheet({
           <div role="alert" className={styles.alert}>
             <ul>
               {serverMessages.map((m, i) => (
-                <li key={i}>{m}</li>
+                <li key={i}>{t(m)}</li>
               ))}
             </ul>
           </div>
@@ -1485,13 +1491,13 @@ export default function LedgerFormSheet({
 
         {result?.ok && (
           <div role="status" className={styles.success}>
-            <p>Αποθηκεύτηκε.</p>
+            <p>{t('Αποθηκεύτηκε.')}</p>
           </div>
         )}
 
         {isCorrection && (
           <div className={styles.correctionReason}>
-            <label htmlFor={`${uid}-reason`}>Γιατί διορθώνεται;</label>
+            <label htmlFor={`${uid}-reason`}>{t('Γιατί διορθώνεται;')}</label>
             <textarea
               id={`${uid}-reason`}
               rows={2}
@@ -1503,7 +1509,7 @@ export default function LedgerFormSheet({
 
         <div className={styles.saveBar}>
           <button type="submit" className={styles.saveButton} disabled={saving}>
-            {saving ? 'Αποθήκευση…' : 'Αποθήκευση'}
+            {saving ? t('Αποθήκευση…') : t('Αποθήκευση')}
           </button>
         </div>
       </form>

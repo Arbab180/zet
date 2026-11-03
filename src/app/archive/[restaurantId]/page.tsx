@@ -8,6 +8,7 @@ import { FORM_ORDER, FORMS, type FormId } from '../../../lib/forms';
 import { formatCents } from '../../../lib/money';
 import { describeFlag } from '../../../lib/flags';
 import AppNav from '../../../components/AppNav';
+import { getT } from '../../../server/lang';
 import styles from '../archive.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -35,11 +36,12 @@ export default async function RestaurantArchivePage({
     listReports(session.userId, restaurantId, { onlyFlagged }),
     isAdmin(session),
   ]);
+  const t = await getT();
 
   return (
     <main className={styles.page}>
       <AppNav current="archive" isAdmin={admin} />
-      <Link href="/archive" className={styles.backLink}>← Αρχείο</Link>
+      <Link href="/archive" className={styles.backLink}>← {t('Αρχείο')}</Link>
       <h1 className={styles.heading}>{form.displayName}</h1>
 
       <div className={styles.filters}>
@@ -47,19 +49,19 @@ export default async function RestaurantArchivePage({
           href={`/archive/${restaurantId}`}
           className={onlyFlagged ? styles.filter : styles.filterActive}
         >
-          Όλα
+          {t('Όλα')}
         </Link>
         <Link
           href={`/archive/${restaurantId}?flagged=1`}
           className={onlyFlagged ? styles.filterActive : styles.filter}
         >
-          Μόνο για έλεγχο
+          {t('Μόνο για έλεγχο')}
         </Link>
       </div>
 
       {reports.length === 0 ? (
         <p className={styles.empty}>
-          {onlyFlagged ? 'Κανένα κλείσιμο για έλεγχο.' : 'Κανένα κλείσιμο ακόμα.'}
+          {onlyFlagged ? t('Κανένα κλείσιμο για έλεγχο.') : t('Κανένα κλείσιμο ακόμα.')}
         </p>
       ) : (
         <ul className={styles.list}>
@@ -70,11 +72,11 @@ export default async function RestaurantArchivePage({
                 className={r.flags.length > 0 ? styles.rowFlagged : styles.row}
               >
                 <span className={styles.rowDate}>{r.businessDate}</span>
-                <span className={styles.rowStatus}>{statusLabel(r.status)}</span>
+                <span className={styles.rowStatus}>{t(statusLabel(r.status))}</span>
                 <span className={styles.rowAmount}>{formatCents(r.actualCents)}</span>
                 {r.flags.length > 0 && (
                   <span className={styles.rowFlags}>
-                    {r.flags.map((f) => describeFlag(f, formatCents)).join(' · ')}
+                    {r.flags.map((f) => t(describeFlag(f, formatCents))).join(' · ')}
                   </span>
                 )}
               </Link>

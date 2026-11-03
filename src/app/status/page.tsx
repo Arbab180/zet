@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { getCurrentSession } from '../../server/currentSession';
 import { withUserTransaction } from '../../lib/db';
+import { getT } from '../../server/lang';
 import styles from '../archive/archive.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -27,6 +28,7 @@ export default async function StatusPage() {
   // the day the database or ADMIN_USER_ID is what is broken.
   if (session.userId !== process.env.ADMIN_USER_ID) notFound();
 
+  const t = await getT();
   const present = (name: string) => (process.env[name] ?? '') !== '';
 
   const settings: Array<[string, boolean, string]> = [
@@ -65,17 +67,17 @@ export default async function StatusPage() {
 
   return (
     <main className={styles.page}>
-      <Link href="/" className={styles.backLink}>← Αρχική</Link>
-      <h1 className={styles.heading}>Κατάσταση</h1>
-      <p className={styles.sub}>Τι έλαβε η εφαρμογή που τρέχει τώρα.</p>
+      <Link href="/" className={styles.backLink}>← {t('Αρχική')}</Link>
+      <h1 className={styles.heading}>{t('Κατάσταση')}</h1>
+      <p className={styles.sub}>{t('Τι έλαβε η εφαρμογή που τρέχει τώρα.')}</p>
 
       <section className={styles.section}>
-        <h2 className={styles.sectionHeading}>Βάση δεδομένων</h2>
+        <h2 className={styles.sectionHeading}>{t('Βάση δεδομένων')}</h2>
         <ul className={styles.lineList}>
           {db.ok ? (
             <>
               <li>
-                <span>✓ Σύνδεση</span>
+                <span>✓ {t('Σύνδεση')}</span>
                 <span className={styles.lineAmount}>{db.ms} ms</span>
               </li>
               {/* Zero is not "fine". It means the database answered but this
@@ -84,9 +86,9 @@ export default async function StatusPage() {
                   here hid exactly that: ADMIN_USER_ID held the laptop's id. */}
               <li>
                 <span>
-                  {db.restaurants > 0 ? '✓' : '✗'} {db.restaurants} εστιατόρια για αυτόν τον
-                  λογαριασμό
-                  {db.restaurants === 0 && ' — το ADMIN_USER_ID δεν υπάρχει σε αυτή τη βάση'}
+                  {db.restaurants > 0 ? '✓' : '✗'}{' '}
+                  {t('{n} εστιατόρια για αυτόν τον λογαριασμό', { n: db.restaurants })}
+                  {db.restaurants === 0 && ` — ${t('το ADMIN_USER_ID δεν υπάρχει σε αυτή τη βάση')}`}
                 </span>
               </li>
               {/* Without the flag, /accounts is "not found" and no restaurant
@@ -94,17 +96,19 @@ export default async function StatusPage() {
                   admin's email). */}
               <li>
                 <span>
-                  {db.admin ? '✓ Διαχειριστής' : '✗ Ο λογαριασμός δεν είναι διαχειριστής σε αυτή τη βάση — τρέξτε ξανά το db-deploy.sh'}
+                  {db.admin
+                    ? `✓ ${t('Διαχειριστής')}`
+                    : `✗ ${t('Ο λογαριασμός δεν είναι διαχειριστής σε αυτή τη βάση — τρέξτε ξανά το db-deploy.sh')}`}
                 </span>
               </li>
               {/* The first 8 characters only: enough to compare with what
                   db-deploy.sh printed, and an id opens nothing by itself. */}
               <li>
-                <span>Σύνδεση ως: {session.userId.slice(0, 8)}…</span>
+                <span>{t('Σύνδεση ως:')} {session.userId.slice(0, 8)}…</span>
                 <span className={styles.lineAmount}>
                   ADMIN_USER_ID: {(process.env.ADMIN_USER_ID ?? '').slice(0, 8) || '—'}…
                   {(process.env.ADMIN_USER_ID ?? '') !== session.userId &&
-                    ' (διαφέρει — αποσυνδεθείτε και συνδεθείτε ξανά)'}
+                    ` (${t('διαφέρει — αποσυνδεθείτε και συνδεθείτε ξανά')})`}
                 </span>
               </li>
             </>
@@ -117,12 +121,12 @@ export default async function StatusPage() {
       </section>
 
       <section className={styles.section}>
-        <h2 className={styles.sectionHeading}>Ρυθμίσεις</h2>
+        <h2 className={styles.sectionHeading}>{t('Ρυθμίσεις')}</h2>
         <ul className={styles.lineList}>
           {settings.map(([name, ok, what]) => (
             <li key={name}>
-              <span>{ok ? '✓' : '✗ λείπει —'} {name}</span>
-              <span className={styles.lineAmount}>{what}</span>
+              <span>{ok ? '✓' : `✗ ${t('λείπει —')}`} {name}</span>
+              <span className={styles.lineAmount}>{t(what)}</span>
             </li>
           ))}
         </ul>

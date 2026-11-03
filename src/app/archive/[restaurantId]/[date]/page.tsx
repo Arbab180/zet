@@ -9,6 +9,8 @@ import { formatCents } from '../../../../lib/money';
 import { describeFlag } from '../../../../lib/flags';
 import ApproveButton from './ApproveButton';
 import styles from '../../archive.module.css';
+import { getT } from '../../../../server/lang';
+import type { T } from '../../../../lib/i18n';
 import { isCustomLineKey, labelFromCustomKey } from '../../../../lib/customLine';
 import { storedItemsTotalCents, type ReceiptItem } from '../../../../lib/receiptItems';
 
@@ -52,6 +54,7 @@ export default async function ReportDetailPage({
   const mayApprove = report.status === 'submitted' && isAdmin;
   // Until it is approved, a night is its restaurant's to fix.
   const mayEdit = report.status !== 'approved' && role !== null && role !== 'viewer';
+  const t = await getT();
 
   return (
     <main className={styles.page}>
@@ -61,8 +64,8 @@ export default async function ReportDetailPage({
 
       <h1 className={styles.heading}>{report.businessDate}</h1>
       <p className={styles.sub}>
-        {form.displayName} · {statusLabel(report.status)}
-        {report.revisionNo > 1 && ` · αναθεώρηση ${report.revisionNo}`}
+        {form.displayName} · {t(statusLabel(report.status))}
+        {report.revisionNo > 1 && ` · ${t('αναθεώρηση {n}', { n: report.revisionNo })}`}
       </p>
 
       {/* A plain link, not a button with script: the route answers with
@@ -73,16 +76,16 @@ export default async function ReportDetailPage({
           className={styles.exportLink}
           download
         >
-          Εξαγωγή για Sofia (.xlsx)
+          {t('Εξαγωγή για Sofia (.xlsx)')}
         </a>
       )}
 
       {flagged && (
         <div role="alert" className={styles.flagPanel}>
-          <p className={styles.flagPanelTitle}>Χρειάζεται έλεγχο</p>
+          <p className={styles.flagPanelTitle}>{t('Χρειάζεται έλεγχο')}</p>
           <ul>
             {report.flags.map((f, i) => (
-              <li key={i}>{describeFlag(f, formatCents)}</li>
+              <li key={i}>{t(describeFlag(f, formatCents))}</li>
             ))}
           </ul>
         </div>
@@ -90,15 +93,15 @@ export default async function ReportDetailPage({
 
       <dl className={styles.totals}>
         <div>
-          <dt>Αναμενόμενα</dt>
+          <dt>{t('Αναμενόμενα')}</dt>
           <dd>{formatCents(report.expectedCents)}</dd>
         </div>
         <div>
-          <dt>Μετρήθηκαν</dt>
+          <dt>{t('Μετρήθηκαν')}</dt>
           <dd>{formatCents(report.actualCents)}</dd>
         </div>
         <div className={report.varianceCents === 0 ? '' : styles.varianceRow}>
-          <dt>Διαφορά</dt>
+          <dt>{t('Διαφορά')}</dt>
           <dd>{formatCents(report.varianceCents)}</dd>
         </div>
       </dl>
@@ -112,7 +115,7 @@ export default async function ReportDetailPage({
         .map((s) => (
         <section key={s.shiftIndex} className={styles.section}>
           <h2 className={styles.sectionHeading}>
-            {s.label}
+            {t(s.label)}
             {shifts.filter((x) => x.label === s.label).length > 1 && ` ${s.shiftIndex}`}
           </h2>
           <ul className={styles.lineList}>
@@ -134,7 +137,8 @@ export default async function ReportDetailPage({
                     {rowLabelFor(
                       form,
                       p.methodKey,
-                      isCustomLineKey(p.methodKey) ? labelFromCustomKey(p.methodKey) : null
+                      isCustomLineKey(p.methodKey) ? labelFromCustomKey(p.methodKey) : null,
+                      t
                     )}
                   </span>
                   <span className={styles.lineAmount}>{formatCents(p.amountCents)}</span>
@@ -146,7 +150,7 @@ export default async function ReportDetailPage({
 
       {night.invoices.length > 0 && (
         <section className={styles.section}>
-          <h2 className={styles.sectionHeading}>ΤΙΜΟΛΟΓΙΑ</h2>
+          <h2 className={styles.sectionHeading}>{t('ΤΙΜΟΛΟΓΙΑ')}</h2>
           <ul className={styles.lineList}>
             {night.invoices.map((inv) => (
               <li key={inv.lineNo}>
@@ -156,11 +160,11 @@ export default async function ReportDetailPage({
                   {inv.invoiceDate && ` · ${inv.invoiceDate}`}
                 </span>
                 <span className={styles.lineAmount}>{formatCents(inv.amountCents)}</span>
-                <ReceiptItemList items={inv.items} lineCents={inv.amountCents} />
+                <ReceiptItemList items={inv.items} lineCents={inv.amountCents} t={t} />
               </li>
             ))}
             <li>
-              <span>Σύνολο τιμολογίων</span>
+              <span>{t('Σύνολο τιμολογίων')}</span>
               <span className={styles.lineAmount}>{formatCents(night.invoiceCents)}</span>
             </li>
           </ul>
@@ -169,7 +173,7 @@ export default async function ReportDetailPage({
 
       {report.lines.length > 0 && (
         <section className={styles.section}>
-          <h2 className={styles.sectionHeading}>Γραμμές</h2>
+          <h2 className={styles.sectionHeading}>{t('Γραμμές')}</h2>
           <ul className={styles.lineList}>
             {[...report.lines]
               // In the order the sheet prints them, not the order the
@@ -177,11 +181,11 @@ export default async function ReportDetailPage({
               .sort((a, b) => rowOrderFor(form, a.rowKey) - rowOrderFor(form, b.rowKey))
               .map((l) => (
               <li key={l.rowKey}>
-                <span>{rowLabelFor(form, l.rowKey, l.labelOverride)}</span>
+                <span>{rowLabelFor(form, l.rowKey, l.labelOverride, t)}</span>
                 <span className={styles.lineAmount}>{formatCents(l.amountCents)}</span>
                 {l.slotCount > 0 && l.slotTotalCents !== l.amountCents && (
                   <span className={styles.lineNote}>
-                    παραγγελίες: {formatCents(l.slotTotalCents)}
+                    {t('παραγγελίες: {amount}', { amount: formatCents(l.slotTotalCents) })}
                   </span>
                 )}
               </li>
@@ -192,13 +196,13 @@ export default async function ReportDetailPage({
 
       {report.expenses.length > 0 && (
         <section className={styles.section}>
-          <h2 className={styles.sectionHeading}>Έξοδα</h2>
+          <h2 className={styles.sectionHeading}>{t('Έξοδα')}</h2>
           <ul className={styles.lineList}>
             {report.expenses.map((e) => (
               <li key={e.lineNo}>
                 <span>{e.description || '—'}</span>
                 <span className={styles.lineAmount}>{formatCents(e.amountCents)}</span>
-                <ReceiptItemList items={e.items} lineCents={e.amountCents} />
+                <ReceiptItemList items={e.items} lineCents={e.amountCents} t={t} />
               </li>
             ))}
           </ul>
@@ -206,13 +210,15 @@ export default async function ReportDetailPage({
       )}
 
       <section className={styles.section}>
-        <h2 className={styles.sectionHeading}>Υπεύθυνος</h2>
+        <h2 className={styles.sectionHeading}>{t('Υπεύθυνος')}</h2>
         <p className={styles.who}>{report.closingManagerName || '—'}</p>
         {report.status === 'approved' && (
           <p className={styles.who}>
-            Εγκρίθηκε{report.approvedAt ? ` στις ${report.approvedAt.slice(0, 10)}` : ''}
+            {report.approvedAt
+              ? t('Εγκρίθηκε στις {date}', { date: report.approvedAt.slice(0, 10) })
+              : t('Εγκρίθηκε')}
             {report.createdBy && report.approvedBy === report.createdBy
-              ? ' — από το ίδιο άτομο που το κατέθεσε'
+              ? ` — ${t('από το ίδιο άτομο που το κατέθεσε')}`
               : ''}
           </p>
         )}
@@ -221,7 +227,7 @@ export default async function ReportDetailPage({
       {mayEdit && (
         <p className={styles.correctLink}>
           <Link href={`/${restaurantId}?edit=${report.businessDate}`}>
-            Επεξεργασία αυτού του κλεισίματος →
+            {t('Επεξεργασία αυτού του κλεισίματος →')}
           </Link>
         </p>
       )}
@@ -229,28 +235,30 @@ export default async function ReportDetailPage({
       {report.status === 'approved' && isAdmin && (
         <p className={styles.correctLink}>
           <Link href={`/${restaurantId}?correct=${report.businessDate}`}>
-            Διόρθωση αυτού του κλεισίματος →
+            {t('Διόρθωση αυτού του κλεισίματος →')}
           </Link>
         </p>
       )}
 
       {revisions.length > 0 && (
         <section className={styles.section}>
-          <h2 className={styles.sectionHeading}>Διορθώσεις</h2>
+          <h2 className={styles.sectionHeading}>{t('Διορθώσεις')}</h2>
           <ol className={styles.revisionList}>
             {revisions.map((v) => (
               <li key={v.revisionNo}>
                 <span className={styles.revisionWhen}>{v.changedAt.slice(0, 10)}</span>
                 <span className={styles.revisionReason}>{v.reason}</span>
                 <span className={styles.revisionBefore}>
-                  πριν: αναμενόμενα {formatCents(v.expectedCents)}, μετρήθηκαν{' '}
-                  {formatCents(v.actualCents)}
+                  {t('πριν: αναμενόμενα {expected}, μετρήθηκαν {actual}', {
+                    expected: formatCents(v.expectedCents),
+                    actual: formatCents(v.actualCents),
+                  })}
                 </span>
               </li>
             ))}
           </ol>
           <p className={styles.revisionNote}>
-            Κάθε διόρθωση κρατά το προηγούμενο κλείσιμο όπως ήταν. Τίποτα δεν σβήνεται.
+            {t('Κάθε διόρθωση κρατά το προηγούμενο κλείσιμο όπως ήταν. Τίποτα δεν σβήνεται.')}
           </p>
         </section>
       )}
@@ -264,7 +272,7 @@ export default async function ReportDetailPage({
       )}
       {report.status === 'submitted' && !mayApprove && (
         <p className={styles.note}>
-          Το κλείσιμο περιμένει έγκριση από τον διαχειριστή. Μέχρι τότε μπορείτε να το διορθώσετε.
+          {t('Το κλείσιμο περιμένει έγκριση από τον διαχειριστή. Μέχρι τότε μπορείτε να το διορθώσετε.')}
         </p>
       )}
     </main>
@@ -276,7 +284,15 @@ export default async function ReportDetailPage({
  * what was filed. A difference from the line's amount is stated, not
  * hidden and not corrected — the accountant is the reader who needs it.
  */
-function ReceiptItemList({ items, lineCents }: { items: ReceiptItem[]; lineCents: number }) {
+function ReceiptItemList({
+  items,
+  lineCents,
+  t,
+}: {
+  items: ReceiptItem[];
+  lineCents: number;
+  t: T;
+}) {
   if (items.length === 0) return null;
   const total = storedItemsTotalCents(items);
   const priced = items.some((i) => i.amountCents != null);
@@ -296,7 +312,10 @@ function ReceiptItemList({ items, lineCents }: { items: ReceiptItem[]; lineCents
       {priced && total !== lineCents && (
         <li className={styles.itemNote}>
           <span>
-            τα είδη δίνουν {formatCents(total)} — διαφορά {formatCents(Math.abs(lineCents - total))}
+            {t('τα είδη δίνουν {total} — διαφορά {difference}', {
+              total: formatCents(total),
+              difference: formatCents(Math.abs(lineCents - total)),
+            })}
           </span>
         </li>
       )}

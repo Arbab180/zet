@@ -5,6 +5,7 @@ import { MIN_PASSWORD_LENGTH, isAdmin, listRestaurantLogins } from '../../server
 import { FORM_ORDER, FORMS } from '../../lib/forms';
 import AppNav from '../../components/AppNav';
 import { CreateLoginForm, ResetPasswordForm } from './AccountForms';
+import { getT } from '../../server/lang';
 import styles from './accounts.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -22,16 +23,19 @@ export default async function AccountsPage() {
   if (!(await isAdmin(session))) notFound();
 
   const logins = await listRestaurantLogins(session.userId);
+  const t = await getT();
 
   return (
     <main className={styles.page}>
       <AppNav current="accounts" isAdmin />
 
-      <h1 className={styles.heading}>Λογαριασμοί</h1>
+      <h1 className={styles.heading}>{t('Λογαριασμοί')}</h1>
       <p className={styles.sub}>
-        Ένας λογαριασμός ανά εστιατόριο. Βλέπει και καταχωρεί μόνο τα δικά του κλεισίματα και
-        μπορεί να τα διορθώνει μέχρι να εγκριθούν. Έγκριση, διόρθωση εγκεκριμένων και εξαγωγή
-        κάνει μόνο ο διαχειριστής.
+        {t(
+          'Ένας λογαριασμός ανά εστιατόριο. Βλέπει και καταχωρεί μόνο τα δικά του κλεισίματα και ' +
+            'μπορεί να τα διορθώνει μέχρι να εγκριθούν. Έγκριση, διόρθωση εγκεκριμένων και εξαγωγή ' +
+            'κάνει μόνο ο διαχειριστής.'
+        )}
       </p>
 
       <ul className={styles.list}>
@@ -42,14 +46,14 @@ export default async function AccountsPage() {
               <h2 className={styles.cardName}>{FORMS[id].displayName}</h2>
               {mine.length === 0 ? (
                 <>
-                  <p className={styles.cardMeta}>Δεν έχει λογαριασμό ακόμα.</p>
+                  <p className={styles.cardMeta}>{t('Δεν έχει λογαριασμό ακόμα.')}</p>
                   <CreateLoginForm restaurantId={id} minLength={MIN_PASSWORD_LENGTH} />
                 </>
               ) : (
                 mine.map((l) => (
                   <div key={l.userId} className={styles.login}>
                     <p className={styles.cardMeta}>
-                      Όνομα χρήστη: <strong className={styles.username}>{l.username}</strong>
+                      {t('Όνομα χρήστη:')} <strong className={styles.username}>{l.username}</strong>
                       {' · '}
                       {l.name}
                     </p>
@@ -67,7 +71,7 @@ export default async function AccountsPage() {
       </ul>
 
       <p className={styles.note}>
-        <Link href="/status">Κατάσταση εφαρμογής →</Link>
+        <Link href="/status">{t('Κατάσταση εφαρμογής →')}</Link>
       </p>
     </main>
   );

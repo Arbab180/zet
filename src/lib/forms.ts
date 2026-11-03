@@ -378,7 +378,12 @@ export const CHINA_SPICE: ShiftsForm = {
 export function rowLabelFor(
   form: ZetForm,
   rowKey: string,
-  labelOverride?: string | null
+  labelOverride?: string | null,
+  /**
+   * Translates the PRINTED labels (src/lib/i18n). A hand-written label is
+   * left as it was written, and so is a raw key.
+   */
+  t: (text: string) => string = (text) => text
 ): string {
   const written = (labelOverride ?? '').trim();
   if (written !== '') return written;
@@ -389,19 +394,19 @@ export function rowLabelFor(
     // part is below: "1" alone on a page of totals does not say it
     // is card money.
     const parent = m?.countsAs ? form.methods.find((x) => x.key === m.countsAs) : undefined;
-    if (m && parent) return `${parent.label} — ${m.label}`;
-    return m?.label?.trim() || rowKey;
+    if (m && parent) return `${t(parent.label)} — ${t(m.label)}`;
+    return m?.label?.trim() ? t(m.label.trim()) : rowKey;
   }
 
   for (const row of form.rows) {
     if (row.key === rowKey && row.kind !== 'expenses') {
-      return row.label.trim() || rowKey;
+      return row.label.trim() ? t(row.label.trim()) : rowKey;
     }
     if (row.kind === 'group') {
       const child = row.children.find((c) => c.key === rowKey);
       // Named as part of its parent, because "Bamboo" alone on a page of
       // totals does not say which total it is part of.
-      if (child) return `${row.label} — ${child.label}`;
+      if (child) return `${t(row.label)} — ${t(child.label)}`;
     }
   }
   return rowKey;

@@ -2,20 +2,22 @@
 
 import { useActionState } from 'react';
 import { loginAction, type LoginFormState } from './actions';
+import { useT } from '../../components/LangProvider';
 import styles from './page.module.css';
 
 const initial: LoginFormState = { error: null };
 
 export default function LoginPage() {
   const [state, action, pending] = useActionState(loginAction, initial);
+  const t = useT();
 
   return (
     <main className={styles.page}>
       <h1 className={styles.heading}>Digital ZET</h1>
-      <p className={styles.sub}>Σύνδεση</p>
+      <p className={styles.sub}>{t('Σύνδεση')}</p>
 
       <form action={action} className={styles.form}>
-        <label htmlFor="username">Όνομα χρήστη</label>
+        <label htmlFor="username">{t('Όνομα χρήστη')}</label>
         <input
           id="username"
           name="username"
@@ -25,7 +27,7 @@ export default function LoginPage() {
           required
         />
 
-        <label htmlFor="password">Κωδικός</label>
+        <label htmlFor="password">{t('Κωδικός')}</label>
         <input
           id="password"
           name="password"
@@ -36,12 +38,12 @@ export default function LoginPage() {
 
         {state.error && (
           <p role="alert" className={styles.error}>
-            {state.error}
+            {t(state.error)}
           </p>
         )}
 
         <button type="submit" disabled={pending}>
-          {pending ? 'Σύνδεση…' : 'Σύνδεση'}
+          {pending ? t('Σύνδεση…') : t('Σύνδεση')}
         </button>
       </form>
     </main>
